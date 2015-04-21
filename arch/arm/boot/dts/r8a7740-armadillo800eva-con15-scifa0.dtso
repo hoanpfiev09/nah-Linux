@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIFA0 on r8a7740/Armadillo-800 EVA Expansion
+// Interface Connector
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - TXD = CON15 pin 25
+//   - RXD = CON15 pin 23
+//   - RTS = CON15 pin 34
+//   - CTS = CON15 pin 35
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	scifa0_pins: scifa0 {
+		groups = "scifa0_data", "scifa0_ctrl";
+		function = "scifa0";
+	};
+};
+
+&scifa0 {
+	pinctrl-0 = <&scifa0_pins>;
+	pinctrl-names = "default";
+
+	uart-has-rtscts;
+	status = "okay";
+};
