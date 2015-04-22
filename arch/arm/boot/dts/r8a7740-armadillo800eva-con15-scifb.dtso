@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIFB on r8a7740/Armadillo-800 EVA Expansion
+// Interface Connector
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - TXD = CON15 pin 40
+//   - RXD = CON15 pin 41
+//   - SCK = CON15 pin 42
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	scifb_pins: scifb {
+		groups = "scifb_data_0", "scifb_clk_0";
+		function = "scifb";
+	};
+};
+
+&scifb {
+	pinctrl-0 = <&scifb_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
