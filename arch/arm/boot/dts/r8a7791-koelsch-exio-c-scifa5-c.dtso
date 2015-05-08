@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIFA5(c) on r8a7791/Koelsch EXIO Connector C
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - TXD = EXIO Connector C pin 37
+//   - RXD = EXIO Connector C pin 39
+//
+// Notes:
+//   - As these pins are shared with SDHI2, the latter is disabled first.
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	scifa5_pins: scifa5 {
+		groups = "scifa5_data_c";
+		function = "scifa5";
+	};
+};
+
+&sdhi2 {
+	status = "disabled";
+};
+
+&scifa5 {
+	pinctrl-0 = <&scifa5_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
