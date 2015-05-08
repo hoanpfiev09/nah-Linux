@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIFB0 on r8a7791/Koelsch EXIO Connector A
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - TXD = EXIO Connector A pin 60
+//   - RXD = EXIO Connector A pin 66
+//   - RTS = EXIO Connector A pin 62
+//   - CTS = EXIO Connector A pin 65
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	scifb0_pins: scifb0 {
+		groups = "scifb0_data_b", "scifb0_ctrl_b";
+		function = "scifb0";
+	};
+};
+
+&scifb0 {
+	pinctrl-0 = <&scifb0_pins>;
+	pinctrl-names = "default";
+
+	uart-has-rtscts;
+	status = "okay";
+};
