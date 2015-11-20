@@ -1221,3 +1221,10 @@ dtb-$(CONFIG_ARCH_ASPEED) += \
 	aspeed-bmc-opp-zaius.dtb \
 	aspeed-bmc-portwell-neptune.dtb \
 	aspeed-bmc-quanta-q71l.dtb
+
+ifeq ($(CONFIG_OF_OVERLAY),y)
+dtstree		:= $(srctree)/$(src)
+dtbo-y += $(patsubst $(dtstree)/%.dtso,%.dtbo, $(wildcard $(dtstree)/*.dtso))
+always		:= $(dtbo-y)
+clean-files	:= *.dtbo
+endif
