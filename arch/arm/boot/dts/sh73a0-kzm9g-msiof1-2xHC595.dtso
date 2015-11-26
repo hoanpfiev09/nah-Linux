@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF1 and 2xHC595 on sh73a0/KZM-A9-GT CN8/CN21
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - CS# = CN8 pin 63 / CN21 pin 1
+//   - SCK = CN8 pin 65 / CN21 pin 2
+//   - MOSI = CN8 pin 67/ CN21 pin 3
+//   - MISO = CN8 pin 69 / CN21 pin 4[*]
+//
+// [*] As CN21 is meant as a test point to measure CPU communication lines,
+//     this pin cannot serve as an input!
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof1_pins: msiof1 {
+		groups = "msiof1_tsck", "msiof1_tsync",
+			 "msiof1_rxd", "msiof1_txd";
+		function = "msiof1";
+	};
+};
+
+&msiof1 {
+	pinctrl-0 = <&msiof1_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hc595s: gpio@0 {
+		compatible = "fairchild,74hc595";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <2>;
+		spi-max-frequency = <100000>;
+	};
+};
