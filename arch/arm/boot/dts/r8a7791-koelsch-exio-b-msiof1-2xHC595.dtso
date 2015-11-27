@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF1 and 2xHC595 on r8a7791/koelsch EXIO B
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - CS# = EXIO B pin 17
+//   - SCK = EXIO B pin 15
+//   - MOSI = EXIO B pin 9
+//   - MISO = EXIO B pin 7
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof1_pins: msiof1 {
+		groups = "msiof1_clk_c", "msiof1_sync_c",
+			 "msiof1_rx_c", "msiof1_tx_c";
+		function = "msiof1";
+	};
+};
+
+&msiof1 {
+	pinctrl-0 = <&msiof1_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hc595s: gpio@0 {
+		compatible = "fairchild,74hc595";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <2>;
+		spi-max-frequency = <100000>;
+	};
+};
