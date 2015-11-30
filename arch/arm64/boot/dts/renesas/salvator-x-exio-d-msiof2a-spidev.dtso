@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF2(A) and spidev on Salvator-X(S) EXIO D
+//
+// Copyright (C) 2015 Glider bvba
+//
+// Pinout:
+//   - 3V3  = EXIO B(!) pin 39, 40, 41, 42
+//
+//   - GND  = EXIO D pin 3, 4, 7, 8, 12, 17, 18
+//   - CS#  = EXIO D pin 27
+//   - SCK  = EXIO D pin 25
+//   - MOSI = EXIO D pin 21
+//   - MISO = EXIO D pin 23
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof2_pins: msiof2 {
+		groups = "msiof2_clk_a", "msiof2_sync_a",
+			 "msiof2_rxd_a", "msiof2_txd_a";
+		function = "msiof2";
+	};
+};
+
+&msiof2 {
+	pinctrl-0 = <&msiof2_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
