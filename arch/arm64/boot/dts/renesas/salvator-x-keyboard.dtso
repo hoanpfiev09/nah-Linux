@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for GPIO keyboard on Salvator-X(S)
+//
+// Copyright (C) 2015 Glider bvba
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+&{/} {
+	keyboard-sw2 {
+		compatible = "gpio-keys";
+
+		key-a {
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			label = "SW20";
+			debounce-interval = <20>;
+			wakeup-source;
+			linux,code = <KEY_A>;
+		};
+		key-b {
+			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+			label = "SW21";
+			debounce-interval = <20>;
+			wakeup-source;
+			linux,code = <KEY_B>;
+		};
+		key-c {
+			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+			label = "SW22";
+			debounce-interval = <20>;
+			wakeup-source;
+			linux,code = <KEY_C>;
+		};
+	};
+};
