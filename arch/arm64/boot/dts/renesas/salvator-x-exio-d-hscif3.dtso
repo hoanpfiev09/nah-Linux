@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for HSCIF3 on Salvator-X(S) EXIO Connector D
+//
+// Copyright (C) 2016 Glider bvba
+//
+// EXIO Pinout:
+//   - HSCIF3 TXD = EXIO D pin 30
+//   - HSCIF3 RXD = EXIO D pin 28
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	hscif3_pins: hscif3 {
+		groups = "hscif3_data_d";
+		function = "hscif3";
+	};
+};
+
+&hscif3 {
+	pinctrl-0 = <&hscif3_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
