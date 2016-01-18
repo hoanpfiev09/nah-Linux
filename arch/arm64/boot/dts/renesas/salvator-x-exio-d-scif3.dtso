@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIF3 on Salvator-X(S) EXIO Connector D
+//
+// Copyright (C) 2016 Glider bvba
+//
+// EXIO Pinout:
+//   - SCIF3 TXD  = EXIO D pin 21
+//   - SCIF3 RXD  = EXIO D pin 27
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	scif3_pins: scif3 {
+		groups = "scif3_data_b";
+		function = "scif3";
+	};
+};
+
+&scif3 {
+	pinctrl-0 = <&scif3_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
