@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for SCIFB1 on r8a7791/Koelsch EXIO Connector A, using
+// GPIO-based RTS/CTS hardware flow control
+//
+// Copyright (C) 2016 Glider bvba
+//
+// Pinout:
+//   - TXD = EXIO Connector A pin 53
+//   - RXD = EXIO Connector A pin 72
+//   - RTS = EXIO Connector A pin 63
+//   - CTS = EXIO Connector A pin 76
+//   - SCK = EXIO Connector A pin 39
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+&pfc {
+	scifb1_pins: scifb1 {
+		groups = "scifb1_data_b", "scifb1_clk_b";
+		function = "scifb1";
+	};
+};
+
+&scifb1 {
+	pinctrl-0 = <&scifb1_pins>;
+	pinctrl-names = "default";
+
+	rts-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	cts-gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
