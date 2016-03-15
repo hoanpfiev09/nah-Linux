@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for HSCIF1 on Salvator-X(S) Debug Serial 1
+//
+// Copyright (C) 2016 Glider bvba
+//
+// Notes:
+//   - As these pins are shared with SCIF1, the latter is disabled first.
+//
+// EXIO Pinout:
+//   - TXD = EXIO Connector B pin 55
+//   - RXD = EXIO Connector B pin 53 [*]
+//   - RTS = EXIO Connector B pin 49
+//   - CTS = EXIO Connector B pin 47 [*]
+//   - SCK = EXIO Connector B pin 57
+//   - 3V3 = EXIO Connector B pin 41
+//   - GND = EXIO Connector B pin 63
+//
+// [*] As these pins are driven by buffers connected to the CP2102, they can
+//     be used for monitoring only, and not serve as inputs!
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	hscif1_pins: hscif1 {
+		groups = "hscif1_data_a", "hscif1_ctrl_a",
+			 "hscif1_clk_a";
+		function = "hscif1";
+	};
+};
+
+&scif1 {
+	status = "disabled";
+};
+
+&hscif1 {
+	pinctrl-0 = <&hscif1_pins>;
+	pinctrl-names = "default";
+
+	uart-has-rtscts;
+	status = "okay";
+};
