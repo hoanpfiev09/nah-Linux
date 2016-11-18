@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF2(B) SPI slave on Salvator-X(S) EXIO D
+//
+// Copyright (C) 2016 Glider bvba
+//
+// Pinout:
+//   - 3V3  = EXIO B(!) pin 39, 40, 41, 42
+//
+//   - GND  = EXIO D pin 3, 4, 7, 8, 12, 17, 18, 45, 46, 54, 58, 63
+//   - CS#  = EXIO D pin 69
+//   - SCK  = EXIO D pin 71
+//   - MISO = EXIO D pin 65
+//   - MOSI = EXIO D pin 67
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof2_pins: msiof2 {
+		groups = "msiof2_clk_b", "msiof2_sync_b",
+			 "msiof2_rxd_b", "msiof2_txd_b";
+		function = "msiof2";
+	};
+};
+
+&msiof2 {
+	pinctrl-0 = <&msiof2_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	spi-slave;
+};
