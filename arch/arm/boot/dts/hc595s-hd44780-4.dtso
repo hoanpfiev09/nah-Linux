@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for a HD44780 20x4 character LCD connected to GPIOs
+// provided by two 74HC595 shift registers (4-bit wiring)
+//
+// Copyright (C) 2016-2017 Glider bvba
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+&{/} {
+	auxdisplay {
+		compatible = "hit,hd44780";
+
+		data-gpios = <&hc595s 4 GPIO_ACTIVE_HIGH>,
+			     <&hc595s 5 GPIO_ACTIVE_HIGH>,
+			     <&hc595s 6 GPIO_ACTIVE_HIGH>,
+			     <&hc595s 7 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&hc595s 9 GPIO_ACTIVE_HIGH>;
+		rs-gpios = <&hc595s 10 GPIO_ACTIVE_HIGH>;
+		rw-gpios = <&hc595s 11 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&hc595s 12 GPIO_ACTIVE_HIGH>;
+
+		display-height-chars = <4>;
+		display-width-chars = <20>;
+	};
+};
