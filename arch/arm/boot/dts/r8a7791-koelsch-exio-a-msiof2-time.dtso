@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF2 SPI slave time on r8a7791/koelsch EXIO A
+//
+// Copyright (C) 2016-2017 Glider bvba
+//
+// Pinout:
+//   - CS# = EXIO A pin 63
+//   - SCK = EXIO A pin 61
+//   - MISO = EXIO A pin 68
+//   - MOSI = EXIO A pin 70
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof2_pins: msiof2 {
+		groups = "msiof2_clk", "msiof2_sync",
+			 "msiof2_rx", "msiof2_tx";
+		function = "msiof2";
+	};
+};
+
+&msiof2 {
+	pinctrl-0 = <&msiof2_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	spi-slave;
+
+	slave {
+		compatible = "spi-slave-time";
+	};
+};
