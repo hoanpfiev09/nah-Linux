@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF1 and 3x 25LC040 on r8a7791/koelsch EXIO A
+//
+// Copyright (C) 2017 Glider bvba
+//
+// Pinout:
+//   - SCK = EXIO A pin 46
+//   - MOSI = EXIO A pin 54
+//   - MISO = EXIO A pin 56
+//   - CS0# = EXIO A pin 48
+//   - CS1# = EXIO A pin 50
+//   - CS2# = EXIO A pin 52
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+&pfc {
+	msiof1_pins: msiof1 {
+		groups = "msiof1_clk", "msiof1_tx", "msiof1_rx";
+		function = "msiof1";
+	};
+};
+
+&msiof1 {
+	pinctrl-0 = <&msiof1_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>,
+		   <&gpio0 24 GPIO_ACTIVE_LOW>,
+		   <&gpio0 25 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	flash0: eeprom@0 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <0>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
+
+	flash1: eeprom@1 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <1>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
+
+	flash2: eeprom@2 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <2>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
+};
