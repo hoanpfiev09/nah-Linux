@@ -1,0 +1,96 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF1 and 5-channel HC595 on r8a7791/koelsch EXIO A
+// using hardware chipselects where available, and GPIO chipselects elsewhere
+//
+// Note: BAD version, as one hardware chipselect should be left unused!
+//
+// Copyright (C) 2017 Glider bvba
+//
+// Pinout:
+//   - SCK = EXIO A pin 46
+//   - MOSI = EXIO A pin 54
+//   - CS0# = EXIO A pin 48
+//   - CS1# = EXIO A pin 50
+//   - CS2# = EXIO A pin 52
+//   - CS3# = EXIO A pin 42
+//   - CS4# = EXIO A pin 44
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+&pfc {
+	msiof1_pins: msiof1 {
+		groups = "msiof1_clk", "msiof1_tx",
+			 "msiof1_sync", "msiof1_ss1",
+			 "msiof1_ss2";
+		function = "msiof1";
+	};
+};
+
+&msiof1 {
+	pinctrl-0 = <&msiof1_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	num-cs = <5>;
+	cs-gpios = <0>,	/* SYNC */
+		   <0>, /* SS1 */
+		   <0>, /* SS2 */
+		   <&gpio0 20 GPIO_ACTIVE_LOW>,
+		   <&gpio0 21 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	bank0: gpio@0 {
+		compatible = "fairchild,74hc595";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <100000>;
+	};
+
+	bank1: gpio@1 {
+		compatible = "fairchild,74hc595";
+		reg = <1>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <90000>;
+	};
+
+	bank2: gpio@2 {
+		compatible = "fairchild,74hc595";
+		reg = <2>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <80000>;
+	};
+
+	bank3: gpio@3 {
+		compatible = "fairchild,74hc595";
+		reg = <3>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <700000>;
+	};
+
+	bank4: gpio@4 {
+		compatible = "fairchild,74hc595";
+		reg = <4>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <60000>;
+	};
+};
