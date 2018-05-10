@@ -342,6 +342,7 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
 		printk("Hoan_rcar_i2c_irq_send!(msr & MDE)\n");
 		return;
 	}
+	printk("Hoan_rcar_i2c_irq_send priv->pos= %d\n", priv->pos);
 	if (priv->pos < msg->len) {
 		/*
 		 * Prepare next data to ICRXTX register.
@@ -396,13 +397,16 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
 	if (!(msr & MDR))
 		return;
 
+	printk("Hoan_rcar_i2c_irq_recv len= %d\n", msg->len);
+	printk("Hoan_rcar_i2c_irq_recv priv->pos= %d\n", priv->pos);
 	if (msr & MAT) {
 		/*
 		 * Address transfer phase finished, but no data at this point.
 		 * Try to use DMA to receive data.
 		 */
 		rcar_i2c_dma(priv);
-	} else if (priv->pos < msg->len) {
+	} else
+		if (priv->pos < msg->len) {
 		/* get received data */
 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
 		printk("Hoan_messenge data 3 = %x\n", msg->buf[priv->pos]);
@@ -442,7 +446,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	printk("Hoan_rcar_i2c_irq\n");
 	val = rcar_i2c_read(priv, ICMCR);
 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
-	printk("Hoan_rcar_i2c_irq_2\n");
+	printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
 	u32 test = 0xFF;
     //printk("Hoan_before%x", test );
     test &= RCAR_BUS_MASK_DATA;
@@ -518,13 +522,6 @@ static void rcar_i2c_request_dma(struct rcar_i2c_priv *priv,
 static void rcar_i2c_release_dma(struct rcar_i2c_priv *priv)
 {
 	printk("Hoan_rcar_i2c_release_dma\n");
-}
-
-static int Hoan_i2c_master_xfer(struct i2c_adapter *adap,
-		struct i2c_msg *msg,
-		int num)
-{
-
 }
 
 static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
@@ -632,6 +629,107 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
+
+
+static void Hoan_i2c_write(struct rcar_i2c_priv *priv, int reg, u32 val)
+{
+	writel(val, priv->io + reg);
+}
+
+static u32 Hoan_i2c_read(struct rcar_i2c_priv *priv, int reg)
+{
+	return readl(priv->io + reg);
+}
+
+
+static int Hoan_i2c_remove(struct platform_device *dev)
+{
+	return 0;
+}
+static int Hoan_calc_CRC(struct rcar_i2c_priv* priv, struct i2c_timings* t)
+{
+	return 0;
+}
+
+static u32 Hoan_i2c_func(struct i2c_adapter *adap)
+{
+	return 0;
+}
+
+static int Hoan_i2c_master_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
+{
+	return 0;
+}
+
+static int Hoan_i2c_busy_check(struct rcar_i2c_priv* priv)
+{
+	return 0;
+}
+
+static void Hoan_i2c_msend(struct rcar_i2c_priv* priv)
+{
+}
+
+static void Hoan_i2c_mrecv(struct rcar_i2c_priv* priv)
+{
+}
+
+static irqreturn_t Hoan_i2c_irq(int irq, void *ptr)
+{
+	return IRQ_HANDLED;
+}
+
+static const struct i2c_algorithm Hoan_i2c_algo =
+{
+	.master_xfer	= Hoan_i2c_master_xfer,
+		.functionality	= Hoan_i2c_func,
+};
+
+
+static int Hoan_i2c_probe(struct platform_device *pdev)
+{
+	struct rcar_i2c_priv *priv;
+	struct resource *res;
+	int ret;
+
+	priv = kzalloc(sizeof(struct rcar_i2c_priv), GFP_KERNEL);
+	if (!priv) {
+		dev_err(&pdev->dev, "no mem for private data\n");
+		ret = -ENOMEM;
+		goto out0;
+	}
+
+	priv->res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res) {
+		dev_err(&pdev->dev, "no mmio resources\n");
+		ret = -ENODEV;
+		goto out1;
+	}
+
+	priv->io = devm_ioremap_resource(&pdev->dev, priv->res);
+	if (IS_ERR(priv->io))
+			return PTR_ERR(priv->io);
+
+
+	priv->adap.nr =pdev->id;
+	priv->adap.algo = &Hoan_i2c_algo;
+	priv->adap.class = I2C_CLASS_DEPRECATED;
+
+	return ret;
+
+	out4:
+//		free_irq(id->irq, id);
+	out3:
+//		iounmap(id->iobase);
+	out2:
+//		release_resource(id->ioarea);
+//		kfree(id->ioarea);
+	out1:
+		kfree(priv);
+	out0:
+		return ret;
+
+}
 
 static int rcar_i2c_probe(struct platform_device *pdev)
 {
