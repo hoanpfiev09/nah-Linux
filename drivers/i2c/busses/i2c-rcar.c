@@ -689,46 +689,69 @@ static const struct i2c_algorithm Hoan_i2c_algo =
 static int Hoan_i2c_probe(struct platform_device *pdev)
 {
 	struct rcar_i2c_priv *priv;
-	struct resource *res;
-	int ret;
+	struct i2c_adapter *adap;
+	struct device *dev = &pdev->dev;
+	struct i2c_timings i2c_t;
+	int irq, ret;
 
-	priv = kzalloc(sizeof(struct rcar_i2c_priv), GFP_KERNEL);
-	if (!priv) {
-		dev_err(&pdev->dev, "no mem for private data\n");
-		ret = -ENOMEM;
-		goto out0;
+	priv = devm_kzalloc(dev, sizeof(struct rcar_i2c_priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->clk = devm_clk_get(dev, NULL);
+	if (IS_ERR(priv->clk)) {
+		dev_err(dev, "cannot get clock\n");
+		return PTR_ERR(priv->clk);
 	}
 
 	priv->res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		dev_err(&pdev->dev, "no mmio resources\n");
-		ret = -ENODEV;
-		goto out1;
+
+	priv->io = devm_ioremap_resource(dev, priv->res);
+	if (IS_ERR(priv->io))
+		return PTR_ERR(priv->io);
+
+	priv->devtype = (enum rcar_i2c_type)of_device_get_match_data(dev);
+	init_waitqueue_head(&priv->wait);
+
+	adap = &priv->adap;
+	adap->nr = pdev->id;
+	adap->algo = &Hoan_i2c_algo;
+	adap->class = I2C_CLASS_DEPRECATED;
+	adap->retries = 3;
+	adap->dev.parent = dev;
+	adap->dev.of_node = dev->of_node;
+	i2c_set_adapdata(adap, priv);
+	strlcpy(adap->name, pdev->name, sizeof(adap->name));
+
+	i2c_parse_fw_timings(dev, &i2c_t, false);
+
+
+	/* Activate device for clock calculation */
+	pm_runtime_enable(dev);
+	pm_runtime_get_sync(dev);
+	ret = rcar_i2c_clock_calculate(priv, &i2c_t);
+	if (ret < 0)
+		goto out_pm_put;
+
+
+	irq = platform_get_irq(pdev, 0);
+	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+	if (ret < 0) {
+		dev_err(dev, "cannot get irq %d\n", irq);
+		goto out_pm_disable;
 	}
 
-	priv->io = devm_ioremap_resource(&pdev->dev, priv->res);
-	if (IS_ERR(priv->io))
-			return PTR_ERR(priv->io);
 
 
-	priv->adap.nr =pdev->id;
-	priv->adap.algo = &Hoan_i2c_algo;
-	priv->adap.class = I2C_CLASS_DEPRECATED;
 
-	return ret;
+	return 0;
 
-	out4:
-//		free_irq(id->irq, id);
-	out3:
-//		iounmap(id->iobase);
-	out2:
-//		release_resource(id->ioarea);
-//		kfree(id->ioarea);
-	out1:
-		kfree(priv);
-	out0:
+	 out_pm_put:
+		pm_runtime_put(dev);
+	 out_pm_disable:
+		pm_runtime_disable(dev);
+		printk("Hoan_pm_runtime_disable\n");
 		return ret;
-
 }
 
 static int rcar_i2c_probe(struct platform_device *pdev)
