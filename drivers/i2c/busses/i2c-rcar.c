@@ -288,9 +288,11 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 	 * it didn't cause a drawback for me, let's rather be safe than sorry.
 	 */
 	if (priv->flags & ID_FIRST_MSG) {
+		printk("Hoan_rcar_write_out_before\n");
 		rcar_i2c_write(priv, ICMSR, 0);
 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 	} else {
+		printk("Hoan_rcar_write_out_after\n");
 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 		rcar_i2c_write(priv, ICMSR, 0);
 	}
@@ -562,7 +564,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 			} else {
 				printk("Hoan_rcar_i2c_irq_send!rcar_i2c_next_msg(priv);\n");
 				rcar_i2c_next_msg(priv);
-				goto out;
+				//goto out;
 			}
 		}
 
