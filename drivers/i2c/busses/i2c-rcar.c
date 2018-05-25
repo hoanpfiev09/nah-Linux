@@ -445,7 +445,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	u32 msr, val;
 
 	/* Clear START or STOP as soon as we can */
-	printk("Hoan_rcar_i2c_irq\n");
+	//printk("Hoan_rcar_i2c_irq\n");
 	val = rcar_i2c_read(priv, ICMCR);
 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
 	printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
@@ -458,6 +458,10 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 
 	/* Only handle interrupts that are currently enabled */
 	msr &= rcar_i2c_read(priv, ICMIER);
+
+	//printk("Hoan_rcar_i2c_irq ICMSR =%x\n",rcar_i2c_read(priv, ICMSR));
+	printk("Hoan_rcar_i2c_irq ICMIER =%x ICMSR =%x\n",rcar_i2c_read(priv, ICMIER) & 0xFF, rcar_i2c_read(priv, ICMSR)& 0xFF);
+
 	if (!msr) {
 		printk("Hoan_rcar_i2c_read(priv, ICMIER)");
 		if (rcar_i2c_slave_irq(priv))
@@ -500,7 +504,9 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	if (rcar_i2c_is_recv(priv))
 	{
 		printk("Hoan_rcar_i2c_is_recv");
-		if (msr & MAT) {
+		printk("Hoan_rcar_i2c_irq_recv priv->pos= %d\n", priv->pos);
+		if (msr & MAT)
+		{
 				/*
 				 * Address transfer phase finished, but no data at this point.
 				 * Try to use DMA to receive data.
@@ -564,7 +570,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 			} else {
 				printk("Hoan_rcar_i2c_irq_send!rcar_i2c_next_msg(priv);\n");
 				rcar_i2c_next_msg(priv);
-				//goto out;
+				goto out;
 			}
 		}
 
@@ -574,11 +580,12 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 out:
 	//printk("Hoan_rcar_i2c_irq_OUT");
 	if (priv->flags & ID_DONE) {
+		printk("Hoan_rcar_i2c_irq_OUT priv->flags & ID_DONE");
 		rcar_i2c_write(priv, ICMIER, 0);
 		rcar_i2c_write(priv, ICMSR, 0);
 		wake_up(&priv->wait);
 	}
-
+	//printk("Hoan_rcar_i2c_irq_OUT");
 	return IRQ_HANDLED;
 }
 
