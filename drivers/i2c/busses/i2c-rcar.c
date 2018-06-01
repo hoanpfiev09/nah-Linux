@@ -98,8 +98,12 @@
 #define RCAR_BUS_MASK_DATA	(~(ESG | FSB) & 0xFF)
 #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
 
-#define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
-#define RCAR_IRQ_RECV	(MNR | MAL | MST | MAT | MDR)
+//#define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
+//#define RCAR_IRQ_RECV	(MNR | MAL | MST | MAT | MDR)
+#define RCAR_IRQ_SEND	(MNR | MAL | MST | MDE)
+
+#define RCAR_IRQ_RECV	(MNR | MAL | MST | MDR)
+
 #define RCAR_IRQ_STOP	(MST)
 
 #define RCAR_IRQ_ACK_SEND	(~(MAT | MDE) & 0xFF)
@@ -279,9 +283,10 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 		priv->flags |= ID_LAST_MSG;
 
 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+	//rcar_i2c_write(priv, ICMAR, (0x10 << 1) | read);
 	printk("read =  %d\n", read);
 	printk("slave addr %x\n", priv->msg->addr);
-	printk("value register %x\n", (priv->msg->addr << 1) | read);
+	printk("value register %x\n ICMSR = %x\n", (priv->msg->addr << 1) | read, rcar_i2c_read(priv, ICMSR)& 0xFF);
 	/*
 	 * We don't have a testcase but the HW engineers say that the write order
 	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
@@ -297,6 +302,7 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 		rcar_i2c_write(priv, ICMSR, 0);
 	}
 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+	printk("Hoan_rcar_i2c_prepare_msg_end ICMSR = %x\n",rcar_i2c_read(priv, ICMSR)& 0xFF );
 }
 
 static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
@@ -333,101 +339,6 @@ static void rcar_i2c_dma(struct rcar_i2c_priv *priv)
 	printk("Hoan_rcar_i2c_dma\n");
 }
 
-static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
-{
-	printk("Hoan_rcar_i2c_irq_send\n");
-	struct i2c_msg *msg = priv->msg;
-
-	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
-	if (!(msr & MDE))
-	{
-		printk("Hoan_rcar_i2c_irq_send!(msr & MDE)\n");
-		return;
-	}
-	printk("Hoan_rcar_i2c_irq_send priv->pos= %d\n", priv->pos);
-	if (priv->pos < msg->len) {
-		/*
-		 * Prepare next data to ICRXTX register.
-		 * This data will go to _SHIFT_ register.
-		 *
-		 *    *
-		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
-		 */
-		printk("Hoan_messenge data = %x\n", msg->buf[priv->pos]);
-		rcar_i2c_write(priv, ICRXTX, msg->buf[priv->pos]);
-		priv->pos++;
-		printk("Hoan_messenge data 2  = %x\n", msg->buf[priv->pos]);
-		/*
-		 * Try to use DMA to transmit the rest of the data if
-		 * address transfer pashe just finished.
-		 */
-		if (msr & MAT)
-			rcar_i2c_dma(priv);
-	} else {
-		/*
-		 * The last data was pushed to ICRXTX on _PREV_ empty irq.
-		 * It is on _SHIFT_ register, and will sent to I2C bus.
-		 *
-		 *		  *
-		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
-		 */
-		printk("Hoan_rcar_i2c_irq_send!} else {\n");
-		if (priv->flags & ID_LAST_MSG) {
-			/*
-			 * If current msg is the _LAST_ msg,
-			 * prepare stop condition here.
-			 * ID_DONE will be set on STOP irq.
-			 */
-			printk("Hoan_rcar_i2c_irq_send!priv->flags & ID_LAST_MSG\n");
-			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-		} else {
-			printk("Hoan_rcar_i2c_irq_send!rcar_i2c_next_msg(priv);\n");
-			rcar_i2c_next_msg(priv);
-			return;
-		}
-	}
-
-	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-}
-
-static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
-{
-	printk("Hoan_rcar_i2c_irq_recv\n");
-	struct i2c_msg *msg = priv->msg;
-
-	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
-	if (!(msr & MDR))
-		return;
-
-	printk("Hoan_rcar_i2c_irq_recv len= %d\n", msg->len);
-	printk("Hoan_rcar_i2c_irq_recv priv->pos= %d\n", priv->pos);
-	if (msr & MAT) {
-		/*
-		 * Address transfer phase finished, but no data at this point.
-		 * Try to use DMA to receive data.
-		 */
-		rcar_i2c_dma(priv);
-	} else
-		if (priv->pos < msg->len) {
-		/* get received data */
-		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
-		printk("Hoan_messenge data 3 = %x\n", msg->buf[priv->pos]);
-		priv->pos++;
-	}
-
-	/*
-	 * If next received data is the _LAST_, go to STOP phase. Might be
-	 * overwritten by REP START when setting up a new msg. Not elegant
-	 * but the only stable sequence for REP START I have found so far.
-	 */
-	if (priv->pos + 1 >= msg->len)
-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-
-	if (priv->pos == msg->len && !(priv->flags & ID_LAST_MSG))
-		rcar_i2c_next_msg(priv);
-	else
-		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
-}
 
 static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
 {
@@ -440,7 +351,6 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
 
 static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 {
-
 	struct rcar_i2c_priv *priv = ptr;
 	u32 msr, val;
 
@@ -448,7 +358,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	//printk("Hoan_rcar_i2c_irq\n");
 	val = rcar_i2c_read(priv, ICMCR);
 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
-	printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
+	//printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
 	u32 test = 0xFF;
     //printk("Hoan_before%x", test );
     test &= RCAR_BUS_MASK_DATA;
@@ -460,7 +370,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	msr &= rcar_i2c_read(priv, ICMIER);
 
 	//printk("Hoan_rcar_i2c_irq ICMSR =%x\n",rcar_i2c_read(priv, ICMSR));
-	printk("Hoan_rcar_i2c_irq ICMIER =%x ICMSR =%x\n",rcar_i2c_read(priv, ICMIER) & 0xFF, rcar_i2c_read(priv, ICMSR)& 0xFF);
+	printk("Hoan_rcar_i2c_irq RCAR_IRQ_ACK_SEND =%x ICMIER =%x ICMSR =%x\n",RCAR_IRQ_ACK_SEND, rcar_i2c_read(priv, ICMIER) & 0xff, rcar_i2c_read(priv, ICMSR)& 0xff);
 
 	if (!msr) {
 		printk("Hoan_rcar_i2c_read(priv, ICMIER)");
@@ -494,43 +404,52 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 		goto out;
 	}
 
-	if ((msr & MDR))
-	{
-		printk("Hoan_rcar_i2c_is_recv msr & MDR");
-	}
+	//if ((msr & MDR))
+	//{
+	//	printk("Hoan_rcar_i2c_is_recv msr & MDR");
+	//}
 	//struct i2c_msg *msg = priv->msg;
 
 
 	if (rcar_i2c_is_recv(priv))
 	{
-		printk("Hoan_rcar_i2c_is_recv");
-		printk("Hoan_rcar_i2c_irq_recv priv->pos= %d\n", priv->pos);
-		if (msr & MAT)
+		//printk("Hoan_rcar_i2c_is_recv");
+		printk("Hoan_rcar_i2c_irq_recv priv->pos= %d msr =%d msr&MAT =%d 7<<1=%d \n", priv->pos, msr&0xff, msr & MAT, 7&1);
+		if (rcar_i2c_read(priv, ICMSR) & MAT)
+		//	if (msr & MAT)
 		{
 				/*
 				 * Address transfer phase finished, but no data at this point.
 				 * Try to use DMA to receive data.
 				 */
 				rcar_i2c_dma(priv);
-			} else
-				if (priv->pos < priv->msg->len) {
-				/* get received data */
-				priv->msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
-				printk("Hoan_messenge data 3 = %x\n", priv->msg->buf[priv->pos]);
-				priv->pos++;
 			}
+		else
+			if (priv->pos < priv->msg->len)
+			{
+						/* get received data */
+						priv->msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
+						//priv->msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
+						printk("Hoan_messenge data 3 = %x\n", priv->msg->buf[priv->pos]);
+						priv->pos++;
+					}
+
 		if (priv->pos + 1 >= priv->msg->len)
 				rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
 
 			if (priv->pos == priv->msg->len && !(priv->flags & ID_LAST_MSG))
 				rcar_i2c_next_msg(priv);
 			else
+			{
+				printk("Hoan_rcar_i2c_is_recv_Clear MDR and MAT\n");
 				rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
+			}
 	}
 
 	else
 	{
 		printk("Hoan_rcar_i2c_irq_send priv->pos= %d\n", priv->pos);
+		//rcar_i2c_write(priv, ICMSR, ICMSR & RCAR_IRQ_ACK_SEND);
 		if (priv->pos < priv->msg->len) {
 			/*
 			 * Prepare next data to ICRXTX register.
@@ -574,7 +493,8 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 			}
 		}
 
-		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+		rcar_i2c_write(priv, ICMSR, ICMSR & RCAR_IRQ_ACK_SEND);
+		//printk("Hoan_rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND) ICMSR =%x", rcar_i2c_read(priv, ICMSR));
 	}
 
 out:
@@ -588,76 +508,6 @@ out:
 	//printk("Hoan_rcar_i2c_irq_OUT");
 	return IRQ_HANDLED;
 }
-
-
-//static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
-//{
-//
-//	struct rcar_i2c_priv *priv = ptr;
-//	u32 msr, val;
-//
-//	/* Clear START or STOP as soon as we can */
-//	printk("Hoan_rcar_i2c_irq\n");
-//	val = rcar_i2c_read(priv, ICMCR);
-//	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
-//	printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
-//	u32 test = 0xFF;
-//    //printk("Hoan_before%x", test );
-//    test &= RCAR_BUS_MASK_DATA;
-//    //printk("Hoan_after %x", test );
-//
-//	msr = rcar_i2c_read(priv, ICMSR);
-//
-//	/* Only handle interrupts that are currently enabled */
-//	msr &= rcar_i2c_read(priv, ICMIER);
-//	if (!msr) {
-//		printk("Hoan_rcar_i2c_read(priv, ICMIER)");
-//		if (rcar_i2c_slave_irq(priv))
-//			return IRQ_HANDLED;
-//
-//		return IRQ_NONE;
-//	}
-//
-//	/* Arbitration lost */
-//	if (msr & MAL) {
-//		printk("Hoan_(msr & MAL)");
-//		priv->flags |= ID_DONE | ID_ARBLOST;
-//		goto out;
-//	}
-//
-//	/* Nack */
-//	if (msr & MNR) {
-//		printk("Hoan_(msr & MNR)");
-//		/* HW automatically sends STOP after received NACK */
-//		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
-//		priv->flags |= ID_NACK;
-//		goto out;
-//	}
-//
-//	/* Stop */
-//	if (msr & MST) {
-//		printk("Hoan_(msr & MST)");
-//		priv->msgs_left--; /* The last message also made it */
-//		priv->flags |= ID_DONE;
-//		goto out;
-//	}
-//
-//	if (rcar_i2c_is_recv(priv))
-//		rcar_i2c_irq_recv(priv, msr);
-//	else
-//		rcar_i2c_irq_send(priv, msr);
-//
-//out:
-//	//printk("Hoan_rcar_i2c_irq_OUT");
-//	if (priv->flags & ID_DONE) {
-//		rcar_i2c_write(priv, ICMIER, 0);
-//		rcar_i2c_write(priv, ICMSR, 0);
-//		wake_up(&priv->wait);
-//	}
-//
-//	return IRQ_HANDLED;
-//}
-
 
 
 static struct dma_chan *rcar_i2c_request_dma_chan(struct device *dev,
