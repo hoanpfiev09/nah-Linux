@@ -101,7 +101,6 @@
 //#define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
 //#define RCAR_IRQ_RECV	(MNR | MAL | MST | MAT | MDR)
 #define RCAR_IRQ_SEND	(MNR | MAL | MST | MDE)
-
 #define RCAR_IRQ_RECV	(MNR | MAL | MST | MDR)
 
 #define RCAR_IRQ_STOP	(MST)
@@ -317,29 +316,6 @@ static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
 /*
  *		interrupt functions
  */
-static void rcar_i2c_dma_unmap(struct rcar_i2c_priv *priv)
-{
-	printk("Hoan_rcar_i2c_dma_unmap\n");
-
-}
-
-static void rcar_i2c_cleanup_dma(struct rcar_i2c_priv *priv)
-{
-	printk("Hoan_rcar_i2c_cleanup_dma\n");
-
-}
-
-static void rcar_i2c_dma_callback(void *data)
-{
-	printk("Hoan_rcar_i2c_dma_callback\n");
-}
-
-static void rcar_i2c_dma(struct rcar_i2c_priv *priv)
-{
-	printk("Hoan_rcar_i2c_dma\n");
-}
-
-
 
 static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 {
@@ -394,25 +370,17 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 		goto out;
 	}
 
-	//if ((msr & MDR))
-	//{
-	//	printk("Hoan_rcar_i2c_is_recv msr & MDR");
-	//}
-	//struct i2c_msg *msg = priv->msg;
-
-
-	if (rcar_i2c_is_recv(priv))
+	if (rcar_i2c_read(priv, ICMSR) & MDR)
 	{
 		//printk("Hoan_rcar_i2c_is_recv");
 		printk("Hoan_rcar_i2c_irq_recv priv->pos= %d msr =%d msr&MAT =%d 7<<1=%d \n", priv->pos, msr&0xff, msr & MAT, 7&1);
 		if (rcar_i2c_read(priv, ICMSR) & MAT)
-		//	if (msr & MAT)
 		{
 				/*
 				 * Address transfer phase finished, but no data at this point.
 				 * Try to use DMA to receive data.
 				 */
-				rcar_i2c_dma(priv);
+			//	rcar_i2c_dma(priv);
 			}
 		else
 			if (priv->pos < priv->msg->len)
@@ -456,8 +424,8 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 			 * Try to use DMA to transmit the rest of the data if
 			 * address transfer pashe just finished.
 			 */
-			if (msr & MAT)
-				rcar_i2c_dma(priv);
+			//if (msr & MAT)
+				//rcar_i2c_dma(priv);
 		} else
 		{
 			/*
@@ -500,26 +468,6 @@ out:
 }
 
 
-static struct dma_chan *rcar_i2c_request_dma_chan(struct device *dev,
-					enum dma_transfer_direction dir,
-					dma_addr_t port_addr)
-{
-	struct dma_chan *chan;
-	printk("Hoan_rcar_i2c_request_dma_chan\n");
-	return chan;
-}
-
-static void rcar_i2c_request_dma(struct rcar_i2c_priv *priv,
-				 struct i2c_msg *msg)
-{
-	printk("Hoan_rcar_i2c_release_dma\n");
-}
-
-static void rcar_i2c_release_dma(struct rcar_i2c_priv *priv)
-{
-	printk("Hoan_rcar_i2c_release_dma\n");
-}
-
 static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
 				struct i2c_msg *msgs,
 				int num)
@@ -548,7 +496,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
 			ret = -EOPNOTSUPP;
 			goto out;
 		}
-		rcar_i2c_request_dma(priv, msgs + i);
+//		rcar_i2c_request_dma(priv, msgs + i);
 	}
 
 	/* init first message */
@@ -560,7 +508,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
 	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE,
 				     num * adap->timeout);
 	if (!time_left) {
-		rcar_i2c_cleanup_dma(priv);
+//		rcar_i2c_cleanup_dma(priv);
 		rcar_i2c_init(priv);
 		ret = -ETIMEDOUT;
 	} else if (priv->flags & ID_NACK) {
