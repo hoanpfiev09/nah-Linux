@@ -381,7 +381,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 				 */
 			//	rcar_i2c_dma(priv);
 			//printk("Hoan_rcar_i2c_irq_recv rcar_i2c_dma(priv)\n");
-			}
+		}
 		else
 			if (priv->pos < priv->msg->len)
 			{
@@ -395,17 +395,19 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 		if (priv->pos + 1 >= priv->msg->len)
 				rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
 
-			if (priv->pos == priv->msg->len && !(priv->flags & ID_LAST_MSG))
-			{
-			//	rcar_i2c_next_msg(priv);
-				printk("rcar_i2c_irq_recv(priv)\n");
-				goto out;
-			}
-			else
-			{
-				printk("Hoan_rcar_i2c_is_recv_Clear MDR and MAT\n");
-				rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
-			}
+		if (priv->pos == priv->msg->len && !(priv->flags & ID_LAST_MSG))
+		{
+			//rcar_i2c_next_msg(priv);
+			//rcar_i2c_write(priv, ICMSR, 0);
+			//rcar_i2c_write(priv, ICMIER, 0);
+			printk("rcar_i2c_irq_recv(priv)\n");
+			//goto out;
+		}
+		else
+		{
+			printk("Hoan_rcar_i2c_is_recv_Clear MDR and MAT\n");
+			rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
+		}
 	}
 
 	else
@@ -430,6 +432,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 			 */
 			//if (msr & MAT)
 				//rcar_i2c_dma(priv);
+
 		} else
 		{
 			/*
@@ -448,21 +451,27 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 				 */
 				printk("Hoan_rcar_i2c_irq_send!priv->flags & ID_LAST_MSG\n");
 				rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-			} else {
+
+			} else
+			{
 				printk("Hoan_rcar_i2c_irq_send!rcar_i2c_next_msg(priv);\n");
 
 				//rcar_i2c_next_msg(priv);
 				//return IRQ_HANDLED;
-				goto out;
+				rcar_i2c_write(priv, ICMSR, ICMSR & RCAR_IRQ_ACK_SEND);
+				//rcar_i2c_write(priv, ICMSR, 0);
+				//rcar_i2c_write(priv, ICMIER, 0);
+				//return IRQ_HANDLED;
+				//goto out;
 			}
 		}
 
 		rcar_i2c_write(priv, ICMSR, ICMSR & RCAR_IRQ_ACK_SEND);
-		//printk("Hoan_rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND) ICMSR =%x", rcar_i2c_read(priv, ICMSR));
+		printk("Hoan_rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND) ICMSR =%x", rcar_i2c_read(priv, ICMSR));
 	}
 
 out:
-	//printk("Hoan_rcar_i2c_irq_OUT");
+	printk("Hoan_rcar_i2c_irq_OUT");
 	if (priv->flags & ID_DONE) {
 		printk("Hoan_rcar_i2c_irq_OUT priv->flags & ID_DONE");
 		rcar_i2c_write(priv, ICMIER, 0);
@@ -516,17 +525,8 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 	{
 
 		priv->msgs_left = num - i;
-
-//	retry:
+		printk("Hoan_rcar_i2c_master_xfer num = %d   i = %d \n", num, i);
 		rcar_i2c_prepare_msg(priv);
-
-		//priv->flags &= ID_P_MASK;
-//		priv->msgs_left --;
-
-//		priv->msgs_left = num - i - 1;
-
-
-
 
 		priv->msg++;
 		i++;
@@ -534,8 +534,8 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 
 	}
 
-	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
-	printk("Hoan_time_left = wait_event_timeout =%ld",time_left);
+//	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
+//	printk("Hoan_time_left = wait_event_timeout =%ld",time_left);
 	//time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
 
 	//time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE,
