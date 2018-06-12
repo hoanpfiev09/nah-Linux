@@ -1101,6 +1101,15 @@ config I2C_RCAR
 	  This driver can also be built as a module.  If so, the module
 	  will be called i2c-rcar.
 
+config HOAN_CONFIG
+	tristate "Hoan testing i2c Configs"
+	help
+	  If you say yes to this option, support will be included for the
+	  Hoan-R-Car I2C controller.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called hoan-i2c-rcar.
+
 comment "External I2C/SMBus adapter drivers"
 
 config I2C_DIOLAN_U2C
