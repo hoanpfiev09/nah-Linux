@@ -878,102 +878,102 @@ static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, struct sh_mobile
 
 static int sh_mobile_i2c_probe(struct platform_device *dev)
 {
-	struct sh_mobile_i2c_data *pd;
-	struct i2c_adapter *adap;
-	struct resource *res;
-	const struct of_device_id *match;
-	int ret;
-	u32 bus_speed;
-
-	pd = devm_kzalloc(&dev->dev, sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
-	if (!pd)
-		return -ENOMEM;
-
-	pd->clk = devm_clk_get(&dev->dev, NULL);
-	if (IS_ERR(pd->clk)) {
-		dev_err(&dev->dev, "cannot get clock\n");
-		return PTR_ERR(pd->clk);
-	}
-
-	ret = sh_mobile_i2c_hook_irqs(dev, pd);
-	if (ret)
-		return ret;
-
-	pd->dev = &dev->dev;
-	platform_set_drvdata(dev, pd);
-
-	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
-
-	pd->res = res;
-	pd->reg = devm_ioremap_resource(&dev->dev, res);
-	if (IS_ERR(pd->reg))
-		return PTR_ERR(pd->reg);
-
-	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
-	pd->bus_speed = ret ? STANDARD_MODE : bus_speed;
-	pd->clks_per_count = 1;
-
-	match = of_match_device(sh_mobile_i2c_dt_ids, &dev->dev);
-	if (match) {
-		const struct sh_mobile_dt_config *config = match->data;
-
-		pd->clks_per_count = config->clks_per_count;
-
-		if (config->setup)
-			config->setup(pd);
-	}
-
-	/* The IIC blocks on SH-Mobile ARM processors
-	 * come with two new bits in ICIC.
-	 */
-	if (resource_size(res) > 0x17)
-		pd->flags |= IIC_FLAG_HAS_ICIC67;
-
-	ret = sh_mobile_i2c_init(pd);
-	if (ret)
-		return ret;
-
-	/* Init DMA */
-	sg_init_table(&pd->sg, 1);
-	pd->dma_direction = DMA_NONE;
-	pd->dma_rx = pd->dma_tx = ERR_PTR(-EPROBE_DEFER);
-
-	/* Enable Runtime PM for this device.
-	 *
-	 * Also tell the Runtime PM core to ignore children
-	 * for this device since it is valid for us to suspend
-	 * this I2C master driver even though the slave devices
-	 * on the I2C bus may not be suspended.
-	 *
-	 * The state of the I2C hardware bus is unaffected by
-	 * the Runtime PM state.
-	 */
-	pm_suspend_ignore_children(&dev->dev, true);
-	pm_runtime_enable(&dev->dev);
-
-	/* setup the private data */
-	adap = &pd->adap;
-	i2c_set_adapdata(adap, pd);
-
-	adap->owner = THIS_MODULE;
-	adap->algo = &sh_mobile_i2c_algorithm;
-	adap->dev.parent = &dev->dev;
-	adap->retries = 5;
-	adap->nr = dev->id;
-	adap->dev.of_node = dev->dev.of_node;
-
-	strlcpy(adap->name, dev->name, sizeof(adap->name));
-
-	spin_lock_init(&pd->lock);
-	init_waitqueue_head(&pd->wait);
-
-	ret = i2c_add_numbered_adapter(adap);
-	if (ret < 0) {
-		sh_mobile_i2c_release_dma(pd);
-		return ret;
-	}
-
-	dev_info(&dev->dev, "I2C adapter %d, bus speed %lu Hz\n", adap->nr, pd->bus_speed);
+//	struct sh_mobile_i2c_data *pd;
+//	struct i2c_adapter *adap;
+//	struct resource *res;
+//	const struct of_device_id *match;
+//	int ret;
+//	u32 bus_speed;
+//
+//	pd = devm_kzalloc(&dev->dev, sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
+//	if (!pd)
+//		return -ENOMEM;
+//
+//	pd->clk = devm_clk_get(&dev->dev, NULL);
+//	if (IS_ERR(pd->clk)) {
+//		dev_err(&dev->dev, "cannot get clock\n");
+//		return PTR_ERR(pd->clk);
+//	}
+//
+//	ret = sh_mobile_i2c_hook_irqs(dev, pd);
+//	if (ret)
+//		return ret;
+//
+//	pd->dev = &dev->dev;
+//	platform_set_drvdata(dev, pd);
+//
+//	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+//
+//	pd->res = res;
+//	pd->reg = devm_ioremap_resource(&dev->dev, res);
+//	if (IS_ERR(pd->reg))
+//		return PTR_ERR(pd->reg);
+//
+//	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
+//	pd->bus_speed = ret ? STANDARD_MODE : bus_speed;
+//	pd->clks_per_count = 1;
+//
+//	match = of_match_device(sh_mobile_i2c_dt_ids, &dev->dev);
+//	if (match) {
+//		const struct sh_mobile_dt_config *config = match->data;
+//
+//		pd->clks_per_count = config->clks_per_count;
+//
+//		if (config->setup)
+//			config->setup(pd);
+//	}
+//
+//	/* The IIC blocks on SH-Mobile ARM processors
+//	 * come with two new bits in ICIC.
+//	 */
+//	if (resource_size(res) > 0x17)
+//		pd->flags |= IIC_FLAG_HAS_ICIC67;
+//
+//	ret = sh_mobile_i2c_init(pd);
+//	if (ret)
+//		return ret;
+//
+//	/* Init DMA */
+//	sg_init_table(&pd->sg, 1);
+//	pd->dma_direction = DMA_NONE;
+//	pd->dma_rx = pd->dma_tx = ERR_PTR(-EPROBE_DEFER);
+//
+//	/* Enable Runtime PM for this device.
+//	 *
+//	 * Also tell the Runtime PM core to ignore children
+//	 * for this device since it is valid for us to suspend
+//	 * this I2C master driver even though the slave devices
+//	 * on the I2C bus may not be suspended.
+//	 *
+//	 * The state of the I2C hardware bus is unaffected by
+//	 * the Runtime PM state.
+//	 */
+//	pm_suspend_ignore_children(&dev->dev, true);
+//	pm_runtime_enable(&dev->dev);
+//
+//	/* setup the private data */
+//	adap = &pd->adap;
+//	i2c_set_adapdata(adap, pd);
+//
+//	adap->owner = THIS_MODULE;
+//	adap->algo = &sh_mobile_i2c_algorithm;
+//	adap->dev.parent = &dev->dev;
+//	adap->retries = 5;
+//	adap->nr = dev->id;
+//	adap->dev.of_node = dev->dev.of_node;
+//
+//	strlcpy(adap->name, dev->name, sizeof(adap->name));
+//
+//	spin_lock_init(&pd->lock);
+//	init_waitqueue_head(&pd->wait);
+//
+//	ret = i2c_add_numbered_adapter(adap);
+//	if (ret < 0) {
+//		sh_mobile_i2c_release_dma(pd);
+//		return ret;
+//	}
+//
+//	dev_info(&dev->dev, "I2C adapter %d, bus speed %lu Hz\n", adap->nr, pd->bus_speed);
 
 	return 0;
 }

@@ -321,35 +321,8 @@
 		asahi-kasei,out6-single-end;
 	};
 
-	cs2000: clk_multiplier@4f {
-		#clock-cells = <0>;
-		compatible = "cirrus,cs2000-cp";
-		reg = <0x4f>;
-		clocks = <&audio_clkout>, <&x12_clk>;
-		clock-names = "clk_in", "ref_clk";
-
-		assigned-clocks = <&cs2000>;
-		assigned-clock-rates = <24576000>; /* 1/1 divide */
-	};
 };
 
-&i2c4 {
-	status = "okay";
-
-	csa_vdd: adc@7c {
-		compatible = "maxim,max9611";
-		reg = <0x7c>;
-
-		shunt-resistor-micro-ohms = <5000>;
-	};
-
-	csa_dvfs: adc@7f {
-		compatible = "maxim,max9611";
-		reg = <0x7f>;
-
-		shunt-resistor-micro-ohms = <5000>;
-	};
-};
 
 &i2c_dvfs {
 	status = "okay";
@@ -533,7 +506,7 @@
 		 <&cpg CPG_MOD 1020>, <&cpg CPG_MOD 1021>,
 		 <&cpg CPG_MOD 1020>, <&cpg CPG_MOD 1021>,
 		 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
-		 <&audio_clk_a>, <&cs2000>,
+		 <&audio_clk_a>,
 		 <&audio_clk_c>,
 		 <&cpg CPG_CORE CPG_AUDIO_CLK_I>;
 
