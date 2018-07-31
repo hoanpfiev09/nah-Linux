@@ -136,13 +136,8 @@ struct rcar_i2c_priv {
 	u32 icccr;
 	u32 flags;
 	enum rcar_i2c_type devtype;
-	struct i2c_client *slave;
 
 	struct resource *res;
-	struct dma_chan *dma_tx;
-	struct dma_chan *dma_rx;
-	struct scatterlist sg;
-	enum dma_data_direction dma_direction;
 };
 
 #define rcar_i2c_priv_to_dev(p)		((p)->adap.dev.parent)
@@ -163,7 +158,6 @@ static u32 rcar_i2c_read(struct rcar_i2c_priv *priv, int reg)
 
 static void rcar_i2c_init(struct rcar_i2c_priv *priv)
 {
-	printk("Hoan_rcar_i2c_init\n");
 	/* reset master mode */
 	rcar_i2c_write(priv, ICMIER, 0);
 	rcar_i2c_write(priv, ICMCR, MDBS);
@@ -175,138 +169,124 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
 static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
 {
 	int i;
-	printk("Hoan_rcar_i2c_bus_barrier\n");
-
 	return 0;
 }
 
 static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timings *t)
 {
-	printk("Hoan_rcar_i2c_clock_calculate\n");
-
 	u32 scgd, cdf, round, ick, sum, scl, cdf_width;
-		unsigned long rate;
-		struct device *dev = rcar_i2c_priv_to_dev(priv);
+	unsigned long rate;
+	struct device *dev = rcar_i2c_priv_to_dev(priv);
 
-		/* Fall back to previously used values if not supplied */
-		t->bus_freq_hz = t->bus_freq_hz ?: 100000;
-		t->scl_fall_ns = t->scl_fall_ns ?: 35;
-		t->scl_rise_ns = t->scl_rise_ns ?: 200;
-		t->scl_int_delay_ns = t->scl_int_delay_ns ?: 50;
+	/* Fall back to previously used values if not supplied */
+	t->bus_freq_hz = t->bus_freq_hz ?: 100000;
+	t->scl_fall_ns = t->scl_fall_ns ?: 35;
+	t->scl_rise_ns = t->scl_rise_ns ?: 200;
+	t->scl_int_delay_ns = t->scl_int_delay_ns ?: 50;
 
-		switch (priv->devtype) {
-		case I2C_RCAR_GEN1:
-			cdf_width = 2;
-			break;
-		case I2C_RCAR_GEN2:
-		case I2C_RCAR_GEN3:
-			cdf_width = 3;
-			break;
-		default:
-			dev_err(dev, "device type error\n");
-			return -EIO;
-		}
-
-		/*
-		 * calculate SCL clock
-		 * see
-		 *	ICCCR
-		 *
-		 * ick	= clkp / (1 + CDF)
-		 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
-		 *
-		 * ick  : I2C internal clock < 20 MHz
-		 * ticf : I2C SCL falling time
-		 * tr   : I2C SCL rising  time
-		 * intd : LSI internal delay
-		 * clkp : peripheral_clk
-		 * F[]  : integer up-valuation
-		 */
-		rate = clk_get_rate(priv->clk);
-		cdf = rate / 20000000;
-		if (cdf >= 1U << cdf_width) {
-			dev_err(dev, "Input clock %lu too high\n", rate);
-			return -EIO;
-		}
-		ick = rate / (cdf + 1);
-
-		/*
-		 * it is impossible to calculate large scale
-		 * number on u32. separate it
-		 *
-		 * F[(ticf + tr + intd) * ick] with sum = (ticf + tr + intd)
-		 *  = F[sum * ick / 1000000000]
-		 *  = F[(ick / 1000000) * sum / 1000]
-		 */
-		sum = t->scl_fall_ns + t->scl_rise_ns + t->scl_int_delay_ns;
-		round = (ick + 500000) / 1000000 * sum;
-		round = (round + 500) / 1000;
-
-		/*
-		 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
-		 *
-		 * Calculation result (= SCL) should be less than
-		 * bus_speed for hardware safety
-		 *
-		 * We could use something along the lines of
-		 *	div = ick / (bus_speed + 1) + 1;
-		 *	scgd = (div - 20 - round + 7) / 8;
-		 *	scl = ick / (20 + (scgd * 8) + round);
-		 * (not fully verified) but that would get pretty involved
-		 */
-		for (scgd = 0; scgd < 0x40; scgd++) {
-			scl = ick / (20 + (scgd * 8) + round);
-			if (scl <= t->bus_freq_hz)
-				goto scgd_find;
-		}
-		dev_err(dev, "it is impossible to calculate best SCL\n");
+	switch (priv->devtype) {
+	case I2C_RCAR_GEN1:
+		cdf_width = 2;
+		break;
+	case I2C_RCAR_GEN2:
+	case I2C_RCAR_GEN3:
+		cdf_width = 3;
+		break;
+	default:
+		dev_err(dev, "device type error\n");
 		return -EIO;
+	}
 
-	scgd_find:
-		dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
-			scl, t->bus_freq_hz, clk_get_rate(priv->clk), round, cdf, scgd);
+	/*
+	 * calculate SCL clock
+	 * see
+	 *	ICCCR
+	 *
+	 * ick	= clkp / (1 + CDF)
+	 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
+	 *
+	 * ick  : I2C internal clock < 20 MHz
+	 * ticf : I2C SCL falling time
+	 * tr   : I2C SCL rising  time
+	 * intd : LSI internal delay
+	 * clkp : peripheral_clk
+	 * F[]  : integer up-valuation
+	 */
+	rate = clk_get_rate(priv->clk);
+	cdf = rate / 20000000;
+	if (cdf >= 1U << cdf_width) {
+		dev_err(dev, "Input clock %lu too high\n", rate);
+		return -EIO;
+	}
+	ick = rate / (cdf + 1);
 
-		/* keep icccr value */
-		priv->icccr = scgd << cdf_width | cdf;
+	/*
+	 * it is impossible to calculate large scale
+	 * number on u32. separate it
+	 *
+	 * F[(ticf + tr + intd) * ick] with sum = (ticf + tr + intd)
+	 *  = F[sum * ick / 1000000000]
+	 *  = F[(ick / 1000000) * sum / 1000]
+	 */
+	sum = t->scl_fall_ns + t->scl_rise_ns + t->scl_int_delay_ns;
+	round = (ick + 500000) / 1000000 * sum;
+	round = (round + 500) / 1000;
 
-		return 0;
+	/*
+	 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
+	 *
+	 * Calculation result (= SCL) should be less than
+	 * bus_speed for hardware safety
+	 *
+	 * We could use something along the lines of
+	 *	div = ick / (bus_speed + 1) + 1;
+	 *	scgd = (div - 20 - round + 7) / 8;
+	 *	scl = ick / (20 + (scgd * 8) + round);
+	 * (not fully verified) but that would get pretty involved
+	 */
+	for (scgd = 0; scgd < 0x40; scgd++) {
+		scl = ick / (20 + (scgd * 8) + round);
+		if (scl <= t->bus_freq_hz)
+			goto scgd_find;
+	}
+	dev_err(dev, "it is impossible to calculate best SCL\n");
+	return -EIO;
+
+scgd_find:
+	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
+	scl, t->bus_freq_hz, clk_get_rate(priv->clk), round, cdf, scgd);
+
+	/* keep icccr value */
+	priv->icccr = scgd << cdf_width | cdf;
+
+	return 0;
 }
 
 static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 {
-	printk("Hoan_rcar_i2c_prepare_msg ICMSR = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
 	int read = !!rcar_i2c_is_recv(priv);
 
 	priv->pos = 0;
 	if (priv->msgs_left == 1)
 		priv->flags |= ID_LAST_MSG;
 
-	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
-	//rcar_i2c_write(priv, ICMAR, (0x10 << 1) | read);
-	printk("read =  %d, priv->pos= %d\n priv->msgs_left =%d\n", read, priv->pos, priv->msgs_left);
-	printk("slave addr %x\n", priv->msg->addr);
-	printk("value register %x\n ICMSR = %x\n", (priv->msg->addr << 1) | read, rcar_i2c_read(priv, ICMSR)& 0xFF);
-	/*
+	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);	/*
 	 * We don't have a testcase but the HW engineers say that the write order
 	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
 	 * it didn't cause a drawback for me, let's rather be safe than sorry.
 	 */
 	if (priv->flags & ID_FIRST_MSG) {
-		printk("Hoan_rcar_write_out_before\n");
 		rcar_i2c_write(priv, ICMSR, 0);
 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 	} else {
-		printk("Hoan_rcar_write_out_after\n");
 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 		rcar_i2c_write(priv, ICMSR, 0);
 	}
 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
-	printk("Hoan_rcar_i2c_prepare_msg_end ICMSR = %x\n",rcar_i2c_read(priv, ICMSR)& 0xFF );
 }
 
 static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
 {
-	printk("Hoan_rcar_i2c_next_msg\n");
 	priv->msg++;
 	priv->msgs_left--;
 	priv->flags &= ID_P_MASK;
@@ -321,69 +301,104 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 {
 	struct rcar_i2c_priv *priv = ptr;
 	u32 msr, val;
-
 	/* Clear START or STOP as soon as we can */
-	//printk("Hoan_rcar_i2c_irq\n");
 	val = rcar_i2c_read(priv, ICMCR);
 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
-	//printk("Hoan_rcar_i2c_irq is_receiver_interrupt =%d\n",rcar_i2c_is_recv(priv));
-	u32 test = 0xFF;
-    //printk("Hoan_before%x", test );
-    test &= RCAR_BUS_MASK_DATA;
-    //printk("Hoan_after %x", test );
-
 	msr = rcar_i2c_read(priv, ICMSR);
-	printk("Hoan_rcar_i2c_irq rcar_i2c_read(priv, ICMSR) ICMSR =%x", rcar_i2c_read(priv, ICMSR));
 	/* Only handle interrupts that are currently enabled */
 	msr &= rcar_i2c_read(priv, ICMIER);
 
-	//printk("Hoan_rcar_i2c_irq ICMSR =%x\n",rcar_i2c_read(priv, ICMSR));
-	printk("Hoan_rcar_i2c_irq RCAR_IRQ_ACK_SEND =%x ICMIER =%x ICMSR =%x priv->pos= %d\n",RCAR_IRQ_ACK_SEND, rcar_i2c_read(priv, ICMIER) & 0xff, rcar_i2c_read(priv, ICMSR)& 0xff, priv->pos);
 	if (!msr) {
-		printk("Hoan_rcar_i2c_read(priv, ICMIER)");
-
 		return IRQ_NONE;
-	}
-
-	/* Arbitration lost */
-	if (msr & MAL) {
-		printk("Hoan_(msr & MAL)");
-		priv->flags |= ID_DONE | ID_ARBLOST;
-		goto out;
-	}
-
-	/* Nack */
-	if (msr & MNR) {
-		printk("Hoan_(msr & MNR)");
-		/* HW automatically sends STOP after received NACK */
-		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
-		priv->flags |= ID_NACK;
-		goto out;
 	}
 
 	/* Stop */
 	if (msr & MST) {
-		printk("Hoan_(msr & MST)");
 		priv->msgs_left--; /* The last message also made it */
 		priv->flags |= ID_DONE;
 		goto out;
 	}
 
+	if (rcar_i2c_read(priv, ICMSR) & MDR)
+	{
+		if (rcar_i2c_read(priv, ICMSR) & MAT)
+		{
+				/*
+				 * Address transfer phase finished, but no data at this point.
+				 * Try to use DMA to receive data.
+				 */
+			;
+		}
+		else
+			if (priv->pos < priv->msg->len)
+			{
+				/* get received data */
+				priv->msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
+				priv->pos++;
+			}
+
+		if (priv->pos + 1 >= priv->msg->len)
+				rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+
+		if (priv->pos == priv->msg->len && !(priv->flags & ID_LAST_MSG))
+		{
+			rcar_i2c_next_msg(priv);
+		}
+		else
+		{
+			rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
+		}
+	}
+
+	else
+	{
+		if (priv->pos < priv->msg->len) {
+			/*
+			 * Prepare next data to ICRXTX register.
+			 * This data will go to _SHIFT_ register.
+			 *
+			 *    *
+			 * [ICRXTX] -> [SHIFT] -> [I2C bus]
+			 */
+			rcar_i2c_write(priv, ICRXTX, priv->msg->buf[priv->pos]);
+			priv->pos++;
+		} else
+		{
+			/*
+			 * The last data was pushed to ICRXTX on _PREV_ empty irq.
+			 * It is on _SHIFT_ register, and will sent to I2C bus.
+			 *
+			 *		  *
+			 * [ICRXTX] -> [SHIFT] -> [I2C bus]
+			 */
+			if (priv->flags & ID_LAST_MSG) {
+				/*
+				 * If current msg is the _LAST_ msg,
+				 * prepare stop condition here.
+				 * ID_DONE will be set on STOP irq.
+				 */
+				rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+			} else
+			{
+				rcar_i2c_next_msg(priv);
+				goto out;
+			}
+		}
+
+		rcar_i2c_write(priv, ICMSR, ICMSR & RCAR_IRQ_ACK_SEND);
+	}
 
 out:
-	printk("Hoan_rcar_i2c_irq_OUT");
 	if (priv->flags & ID_DONE) {
-		printk("Hoan_rcar_i2c_irq_OUT priv->flags & ID_DONE");
 		rcar_i2c_write(priv, ICMIER, 0);
 		rcar_i2c_write(priv, ICMSR, 0);
 		wake_up(&priv->wait);
 	}
-	//printk("Hoan_rcar_i2c_irq_OUT");
 	return IRQ_HANDLED;
 }
 
 
-static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
+static int rcar_i2c_master_xfer( struct i2c_adapter *adap,
 		struct i2c_msg *msgs,
 		int num)
 {
@@ -447,59 +462,41 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 
 
 	rcar_i2c_write(priv, ICMSR, 0);
+	udelay(100);
 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 
-	printk("ICMSR1 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
 
+	//int val = rcar_i2c_read(priv, ICMCR);
+	//rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
+
+	//printk("ICMSR1 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+
+	udelay(100);
 	rcar_i2c_write(priv, ICRXTX, 0x70);
+	udelay(100);
 	//udelay(100);
-	printk("ICMSR2 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
-#define RCAR_SEND (~(1<<0) & 0xFF)
-#define RCAR_ADDR_SEND (~(1<<3) & 0xFF)
+	//printk("ICMSR2 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+//#define RCAR_SEND (~(1<<0) & 0xFF)
+//#define RCAR_ADDR_SEND (~(1<<3) & 0xFF)
 	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
 	//rcar_i2c_write(priv, ICMSR, RCAR_SEND);
-	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
+	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
 	udelay(100);
 	rcar_i2c_write(priv, ICRXTX, 0xef);
 	udelay(100);
-	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
-	udelay(100);
+	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+	//udelay(100);
 
 	//rcar_i2c_write(priv, ICRXTX, 0xdf);
-	//udelay(100);
-	//printk("ICMSR3 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
-	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-
-	//udelay(100);
-	//printk("ICMSR4 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
 	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
 	//udelay(100);
-
-
-
-	//rcar_i2c_write(priv, ICRXTX, 0x70);
-	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-
-	//udelay(100);
-
-	//rcar_i2c_write(priv, ICRXTX, 0xef);
-	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-
-	//udelay(100);
-
-
-
-	//rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-
-
-	//udelay(100);
-
 
 	/* reset master mode */
-	rcar_i2c_write(priv, ICMIER, 0);
-	rcar_i2c_write(priv, ICMCR, MDBS);
-	rcar_i2c_write(priv, ICMSR, 0);
+	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+	//udelay(100);
+	//rcar_i2c_write(priv, ICMIER, 0);
+	//rcar_i2c_write(priv, ICMCR, MDBS);
+	//rcar_i2c_write(priv, ICMSR, 0);
 
 
 	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
@@ -512,7 +509,6 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 
 		return ret;
 }
-
 
 
 static u32 rcar_i2c_func(struct i2c_adapter *adap)
@@ -528,8 +524,7 @@ static u32 rcar_i2c_func(struct i2c_adapter *adap)
 }
 
 static const struct i2c_algorithm rcar_i2c_algo = {
-	//.master_xfer	= rcar_i2c_master_xfer,
-	.master_xfer	= Hoan_i2c_master_xfer,
+	.master_xfer	= rcar_i2c_master_xfer,
 	.functionality	= rcar_i2c_func,
 };
 
@@ -552,17 +547,13 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
 
 
-static int count = 0;
 static int rcar_i2c_probe(struct platform_device *pdev)
 {
-	count ++;
-	printk("Hoan_rcar_i2c_probe lan thu i= %d\n", count);
 	struct rcar_i2c_priv *priv;
 	struct i2c_adapter *adap;
 	struct device *dev = &pdev->dev;
 	struct i2c_timings i2c_t;
 	int irq, ret;
-
 
 	priv = devm_kzalloc(dev, sizeof(struct rcar_i2c_priv), GFP_KERNEL);
 	if (!priv)
@@ -583,10 +574,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 	priv->devtype = (enum rcar_i2c_type)of_device_get_match_data(dev);
 	init_waitqueue_head(&priv->wait);
 
-	printk("Hoan_rcar_rcar_i2c_probe &priv->adap->test = %d\n", priv->adap.test);
 	adap = &priv->adap;
-	adap->test = 1000;
-	printk("Hoan_rcar_rcar_i2c_probe &priv->adap->test = %d\n", priv->adap.test);
 	adap->nr = pdev->id;
 	adap->algo = &rcar_i2c_algo;
 	adap->class = I2C_CLASS_DEPRECATED;
@@ -597,11 +585,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
 
 	i2c_parse_fw_timings(dev, &i2c_t, false);
-
-	/* Init DMA */
-	sg_init_table(&priv->sg, 1);
-	priv->dma_direction = DMA_NONE;
-	priv->dma_rx = priv->dma_tx = ERR_PTR(-EPROBE_DEFER);
 
 	/* Activate device for clock calculation */
 	pm_runtime_enable(dev);
@@ -617,12 +600,12 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 		pm_runtime_put(dev);
 
 
-	//irq = platform_get_irq(pdev, 0);
-	//ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
-	//if (ret < 0) {
-	//	dev_err(dev, "cannot get irq %d\n", irq);
-	//	goto out_pm_disable;
-	//}
+	irq = platform_get_irq(pdev, 0);
+	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+	if (ret < 0) {
+		dev_err(dev, "cannot get irq %d\n", irq);
+		goto out_pm_disable;
+	}
 
 	platform_set_drvdata(pdev, priv);
 
@@ -638,11 +621,8 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 	pm_runtime_put(dev);
  out_pm_disable:
 	pm_runtime_disable(dev);
-	printk("Hoan_pm_runtime_disable\n");
 	return ret;
 }
-
-
 
 static int rcar_i2c_remove(struct platform_device *pdev)
 {
