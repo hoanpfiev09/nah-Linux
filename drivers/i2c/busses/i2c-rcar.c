@@ -421,7 +421,9 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 
 
 	printk("Hoan_rcar_i2c_prepare_msg ICMSR = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
-	int read = !!rcar_i2c_is_recv(priv);
+	//int read = !!rcar_i2c_is_recv(priv);
+
+	int read = 0;
 
 	priv->pos = 0;
 	if (priv->msgs_left == 1)
@@ -439,53 +441,69 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
 	 * it didn't cause a drawback for me, let's rather be safe than sorry.
 	 */
-	if (priv->flags & ID_FIRST_MSG) {
-		printk("Hoan_rcar_write_out_before\n");
-		rcar_i2c_write(priv, ICMSR, 0);
-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-	} else {
-		printk("Hoan_rcar_write_out_after\n");
-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-		rcar_i2c_write(priv, ICMSR, 0);
-	}
-	//rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
-	//printk("Hoan_rcar_i2c_prepare_msg_end ICMSR = %x\n",rcar_i2c_read(priv, ICMSR)& 0xFF );
+	//if (priv->flags & ID_FIRST_MSG) {
+	//	printk("Hoan_rcar_write_out_before\n");
 
-	udelay(5000);
 
-	//printk("value register ICMSR = %x  ICMCR = %x ICMIER =%x ICMAR =%x\n",  rcar_i2c_read(priv, ICMSR)& 0xFF, rcar_i2c_read(priv, ICMCR)& 0xFF, rcar_i2c_read(priv, ICMIER)& 0xFF, rcar_i2c_read(priv, ICMAR)& 0xFF);
 
-	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-	//rcar_i2c_write(priv, ICRXTX, 0x70);
-	printk("value register ICMSR = %x  ICMCR = %x ICMIER =%x ICMAR =%x\n",  rcar_i2c_read(priv, ICMSR)& 0xFF, rcar_i2c_read(priv, ICMCR)& 0xFF, rcar_i2c_read(priv, ICMIER)& 0xFF, rcar_i2c_read(priv, ICMAR)& 0xFF);
+	rcar_i2c_write(priv, ICMSR, 0);
+	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+
+	printk("ICMSR1 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+
 	rcar_i2c_write(priv, ICRXTX, 0x70);
-	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+	//udelay(100);
+	printk("ICMSR2 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+#define RCAR_SEND (~(1<<0) & 0xFF)
+#define RCAR_ADDR_SEND (~(1<<3) & 0xFF)
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+	//rcar_i2c_write(priv, ICMSR, RCAR_SEND);
+	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
+	udelay(100);
 	rcar_i2c_write(priv, ICRXTX, 0xef);
+	udelay(100);
+	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
+	udelay(100);
 
-	rcar_i2c_write(priv, ICMSR, RCAR_BUS_PHASE_STOP);
-	//rcar_i2c_write(priv, ICMSR, (~MDE & 0xFF));
-	printk("value register ICMSR = %x  ICMCR = %x ICMIER =%x ICMAR =%x\n",  rcar_i2c_read(priv, ICMSR)& 0xFF, rcar_i2c_read(priv, ICMCR)& 0xFF, rcar_i2c_read(priv, ICMIER)& 0xFF, rcar_i2c_read(priv, ICMAR)& 0xFF);
+	//rcar_i2c_write(priv, ICRXTX, 0xdf);
+	//udelay(100);
+	//printk("ICMSR3 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+
+	//udelay(100);
+	//printk("ICMSR4 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+	//udelay(100);
 
 
+
+	//rcar_i2c_write(priv, ICRXTX, 0x70);
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+
+	//udelay(100);
+
+	//rcar_i2c_write(priv, ICRXTX, 0xef);
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+
+	//udelay(100);
+
+
+
+	//rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+
+
+	//udelay(100);
+
+
+	/* reset master mode */
+	rcar_i2c_write(priv, ICMIER, 0);
+	rcar_i2c_write(priv, ICMCR, MDBS);
+	rcar_i2c_write(priv, ICMSR, 0);
 
 
 	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
-//	printk("Hoan_time_left = wait_event_timeout =%ld",time_left);
-	//time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
 
-	//time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE,
-	//					     num * adap->timeout);
-	//	if (!time_left) {
-			//rcar_i2c_cleanup_dma(priv);
-	//		rcar_i2c_init(priv);
-	//		ret = -ETIMEDOUT;
-//		 else if (priv->flags & ID_NACK) {
-//			ret = -ENXIO;
-//		} else if (priv->flags & ID_ARBLOST) {
-//			ret = -EAGAIN;
-//		} else {
-//			ret = num - priv->msgs_left; /* The number of transfer */
-//		}
 	out:
 		pm_runtime_put(dev);
 
@@ -538,7 +556,7 @@ static int count = 0;
 static int rcar_i2c_probe(struct platform_device *pdev)
 {
 	count ++;
-	printk("Hoan_rcar_i2c_probe lan thu i=%\n", count);
+	printk("Hoan_rcar_i2c_probe lan thu i= %d\n", count);
 	struct rcar_i2c_priv *priv;
 	struct i2c_adapter *adap;
 	struct device *dev = &pdev->dev;
@@ -599,12 +617,12 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 		pm_runtime_put(dev);
 
 
-	irq = platform_get_irq(pdev, 0);
-	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
-	if (ret < 0) {
-		dev_err(dev, "cannot get irq %d\n", irq);
-		goto out_pm_disable;
-	}
+	//irq = platform_get_irq(pdev, 0);
+	//ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+	//if (ret < 0) {
+	//	dev_err(dev, "cannot get irq %d\n", irq);
+	//	goto out_pm_disable;
+	//}
 
 	platform_set_drvdata(pdev, priv);
 
