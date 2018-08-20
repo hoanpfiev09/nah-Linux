@@ -449,21 +449,30 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 	rcar_i2c_write(priv, ICMSR, 0);
 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
 
-	printk("ICMSR1 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
 
-	rcar_i2c_write(priv, ICRXTX, 0x70);
+	u32 val = rcar_i2c_read(priv, ICMCR);
+	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
+
+	//printk("ICMSR1 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+
+	//rcar_i2c_write(priv, ICRXTX, 0x70);
 	//udelay(100);
-	printk("ICMSR2 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
+	//printk("ICMSR2 = %x\n", rcar_i2c_read(priv, ICMSR)& 0xFF);
 #define RCAR_SEND (~(1<<0) & 0xFF)
 #define RCAR_ADDR_SEND (~(1<<3) & 0xFF)
 	//rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
 	//rcar_i2c_write(priv, ICMSR, RCAR_SEND);
+	//rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
+	//udelay(100);
+	//rcar_i2c_write(priv, ICRXTX, 0xef);
+	udelay(100);
+
+
 	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
 	udelay(100);
-	rcar_i2c_write(priv, ICRXTX, 0xef);
-	udelay(100);
-	rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
-	udelay(100);
+
+	//rcar_i2c_write(priv, ICMSR, RCAR_ADDR_SEND);
+	//udelay(100);
 
 	//rcar_i2c_write(priv, ICRXTX, 0xdf);
 	//udelay(100);
@@ -497,9 +506,9 @@ static int Hoan_i2c_master_xfer( struct i2c_adapter *adap,
 
 
 	/* reset master mode */
-	rcar_i2c_write(priv, ICMIER, 0);
-	rcar_i2c_write(priv, ICMCR, MDBS);
-	rcar_i2c_write(priv, ICMSR, 0);
+	//rcar_i2c_write(priv, ICMIER, 0);
+	//rcar_i2c_write(priv, ICMCR, MDBS);
+	//rcar_i2c_write(priv, ICMSR, 0);
 
 
 	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE, adap->timeout);
