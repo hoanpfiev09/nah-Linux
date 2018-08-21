@@ -167,6 +167,7 @@ static int rcar_i2c_get_scl(struct i2c_adapter *adap)
 {
 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	return !!(rcar_i2c_read(priv, ICMCR) & FSCL);
 
 };
@@ -175,6 +176,7 @@ static void rcar_i2c_set_scl(struct i2c_adapter *adap, int val)
 {
 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	if (val)
 		priv->recovery_icmcr |= FSCL;
 	else
@@ -189,6 +191,7 @@ static void rcar_i2c_set_sda(struct i2c_adapter *adap, int val)
 {
 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	if (val)
 		priv->recovery_icmcr |= FSDA;
 	else
@@ -205,6 +208,7 @@ static struct i2c_bus_recovery_info rcar_i2c_bri = {
 };
 static void rcar_i2c_init(struct rcar_i2c_priv *priv)
 {
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* reset master mode */
 	rcar_i2c_write(priv, ICMIER, 0);
 	rcar_i2c_write(priv, ICMCR, MDBS);
@@ -217,6 +221,7 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
 {
 	int i, ret;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	for (i = 0; i < LOOP_TIMEOUT; i++) {
 		/* make sure that bus is not busy */
 		if (!(rcar_i2c_read(priv, ICMCR) & FSDA))
@@ -241,6 +246,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
 	unsigned long rate;
 	struct device *dev = rcar_i2c_priv_to_dev(priv);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* Fall back to previously used values if not supplied */
 	t->bus_freq_hz = t->bus_freq_hz ?: 100000;
 	t->scl_fall_ns = t->scl_fall_ns ?: 35;
@@ -329,6 +335,7 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 {
 	int read = !!rcar_i2c_is_recv(priv);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	priv->pos = 0;
 	if (priv->msgs_left == 1)
 		priv->flags |= ID_LAST_MSG;
@@ -351,6 +358,7 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
 
 static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
 {
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	priv->msg++;
 	priv->msgs_left--;
 	priv->flags &= ID_P_MASK;
@@ -365,6 +373,7 @@ static void rcar_i2c_dma_unmap(struct rcar_i2c_priv *priv)
 	struct dma_chan *chan = priv->dma_direction == DMA_FROM_DEVICE
 		? priv->dma_rx : priv->dma_tx;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* Disable DMA Master Received/Transmitted */
 	rcar_i2c_write(priv, ICDMAER, 0);
 
@@ -384,6 +393,7 @@ static void rcar_i2c_dma_unmap(struct rcar_i2c_priv *priv)
 
 static void rcar_i2c_cleanup_dma(struct rcar_i2c_priv *priv)
 {
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	if (priv->dma_direction == DMA_NONE)
 		return;
 	else if (priv->dma_direction == DMA_FROM_DEVICE)
@@ -398,6 +408,7 @@ static void rcar_i2c_dma_callback(void *data)
 {
 	struct rcar_i2c_priv *priv = data;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	priv->pos += sg_dma_len(&priv->sg);
 
 	rcar_i2c_dma_unmap(priv);
@@ -416,6 +427,7 @@ static void rcar_i2c_dma(struct rcar_i2c_priv *priv)
 	unsigned char *buf;
 	int len;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* Do various checks to see if DMA is feasible at all */
 	if (IS_ERR(chan) || msg->len < 8 || !(msg->flags & I2C_M_DMA_SAFE) ||
 	    (read && priv->flags & ID_P_NO_RXDMA))
@@ -482,6 +494,7 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
 {
 	struct i2c_msg *msg = priv->msg;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
 	if (!(msr & MDE))
 		return;
@@ -502,7 +515,8 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
 		 * address transfer phase just finished.
 		 */
 		if (msr & MAT)
-			rcar_i2c_dma(priv);
+			//rcar_i2c_dma(priv);
+			;
 	} else {
 		/*
 		 * The last data was pushed to ICRXTX on _PREV_ empty irq.
@@ -532,6 +546,7 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
 {
 	struct i2c_msg *msg = priv->msg;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
 	if (!(msr & MDR))
 		return;
@@ -541,7 +556,7 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
 		 * Address transfer phase finished, but no data at this point.
 		 * Try to use DMA to receive data.
 		 */
-		rcar_i2c_dma(priv);
+		//rcar_i2c_dma(priv);
 	} else if (priv->pos < msg->len) {
 		/* get received data */
 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
@@ -569,6 +584,7 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
 	u32 ssr_raw, ssr_filtered;
 	u8 value;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	ssr_raw = rcar_i2c_read(priv, ICSSR) & 0xff;
 	ssr_filtered = ssr_raw & rcar_i2c_read(priv, ICSIER);
 
@@ -624,6 +640,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	struct rcar_i2c_priv *priv = ptr;
 	u32 msr, val;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	/* Clear START or STOP as soon as we can */
 	val = rcar_i2c_read(priv, ICMCR);
 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
@@ -684,6 +701,7 @@ static struct dma_chan *rcar_i2c_request_dma_chan(struct device *dev,
 	char *chan_name = dir == DMA_MEM_TO_DEV ? "tx" : "rx";
 	int ret;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	chan = dma_request_chan(dev, chan_name);
 	if (IS_ERR(chan)) {
 		dev_dbg(dev, "request_channel failed for %s (%ld)\n",
@@ -721,6 +739,7 @@ static void rcar_i2c_request_dma(struct rcar_i2c_priv *priv,
 	struct dma_chan *chan;
 	enum dma_transfer_direction dir;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	read = msg->flags & I2C_M_RD;
 
 	chan = read ? priv->dma_rx : priv->dma_tx;
@@ -738,6 +757,7 @@ static void rcar_i2c_request_dma(struct rcar_i2c_priv *priv,
 
 static void rcar_i2c_release_dma(struct rcar_i2c_priv *priv)
 {
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	if (!IS_ERR(priv->dma_tx)) {
 		dma_release_channel(priv->dma_tx);
 		priv->dma_tx = ERR_PTR(-EPROBE_DEFER);
@@ -754,6 +774,7 @@ static int rcar_i2c_do_reset(struct rcar_i2c_priv *priv)
 {
 	int i, ret;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	ret = reset_control_reset(priv->rstc);
 	if (ret)
 		return ret;
@@ -777,6 +798,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
 	int i, ret;
 	long time_left;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	pm_runtime_get_sync(dev);
 
 	/* Gen3 needs a reset before allowing RXDMA once */
@@ -836,6 +858,7 @@ static int rcar_reg_slave(struct i2c_client *slave)
 {
 	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	if (priv->slave)
 		return -EBUSY;
 
@@ -858,6 +881,7 @@ static int rcar_unreg_slave(struct i2c_client *slave)
 {
 	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	WARN_ON(!priv->slave);
 
 	rcar_i2c_write(priv, ICSIER, 0);
@@ -915,6 +939,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 	struct i2c_timings i2c_t;
 	int irq, ret;
 
+	printk("Hoan i2c-rcar Func %s, Line %d ", __FUNCTION__, __LINE__);
 	priv = devm_kzalloc(dev, sizeof(struct rcar_i2c_priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
@@ -948,9 +973,9 @@ static int rcar_i2c_probe(struct platform_device *pdev)
 	i2c_parse_fw_timings(dev, &i2c_t, false);
 
 	/* Init DMA */
-	sg_init_table(&priv->sg, 1);
-	priv->dma_direction = DMA_NONE;
-	priv->dma_rx = priv->dma_tx = ERR_PTR(-EPROBE_DEFER);
+	//sg_init_table(&priv->sg, 1);
+	//priv->dma_direction = DMA_NONE;
+	//priv->dma_rx = priv->dma_tx = ERR_PTR(-EPROBE_DEFER);
 
 	/* Activate device for clock calculation */
 	pm_runtime_enable(dev);
