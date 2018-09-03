@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0
+//
+// Device Tree Overlay for MSIOF0 and spidev on Ebisu LVDS Cont Connector CN41
+//
+// Copyright (C) 2018 Glider bvba
+//
+// Pinout:
+//   - CS#  = CN41 pin 1
+//   - SCK  = CN41 pin 2
+//   - MOSI = CN41 pin 3
+//   - MISO = CN41 pin 4
+//
+//   - GND  = CN3 or CN4 pin 8
+//   - 3.3V = CN3 or CN4 pin 9
+//
+// Note: Make sure all switches of SW4 (Software Switch) are set to the OFF
+//	 position (default).
+
+/dts-v1/;
+/plugin/;
+
+&pfc {
+	msiof0_pins: msiof0 {
+		groups = "msiof0_sync", "msiof0_clk", "msiof0_txd",
+			 "msiof0_rxd";
+		function = "msiof0";
+	};
+};
+
+&msiof0 {
+	pinctrl-0 = <&msiof0_pins>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
