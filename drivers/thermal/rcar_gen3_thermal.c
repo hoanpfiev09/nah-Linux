@@ -44,6 +44,13 @@
 #define REG_GEN3_THCODE2	0x54
 #define REG_GEN3_THCODE3	0x58
 
+/* FUSE register base and offsets */
+#define PTAT_BASE               0xE6198000
+#define REG_GEN3_PTAT1          0x5C
+#define REG_GEN3_PTAT2          0x60
+#define REG_GEN3_PTAT3          0x64
+#define REG_GEN3_THSCP          0x68
+
 /* IRQ{STR,MSK,EN} bits */
 #define IRQ_TEMP1		BIT(0)
 #define IRQ_TEMP2		BIT(1)
@@ -324,6 +331,11 @@ static void rcar_gen3_thermal_init(struct rcar_gen3_thermal_tsc *tsc)
 	rcar_gen3_thermal_write(tsc, REG_GEN3_THCTR, reg_val);
 
 	usleep_range(1000, 2000);
+
+	printk("func %s line %d h_plat1=%d h_plat2=%d h_plat3=%d",
+							__FUNCTION__, __LINE__,
+							rcar_gen3_thermal_read(tsc, REG_GEN3_PTAT1), rcar_gen3_thermal_read(tsc, REG_GEN3_PTAT2), rcar_gen3_thermal_read(tsc, REG_GEN3_PTAT3));
+
 }
 
 static const struct of_device_id rcar_gen3_thermal_dt_ids[] = {
@@ -423,6 +435,25 @@ static int rcar_gen3_thermal_probe(struct platform_device *pdev)
 		priv->thermal_init(tsc);
 		rcar_gen3_thermal_calc_coefs(&tsc->coef, ptat, thcode[i]);
 
+		printk("func %s line %d a1=%d a2=%d b1=%d b2=%d",
+				__FUNCTION__, __LINE__, tsc->coef.a1, tsc->coef.a2, tsc->coef.b1 , tsc->coef.b2);
+
+		//Read PTAT Parameter1 register
+
+		int h_plat1, h_plat2, h_plat3;
+
+		printk("func %s line %d h_irqctl=%d h_irqmask=%d h_irqen=%d",
+						__FUNCTION__, __LINE__,
+						rcar_gen3_thermal_read(tsc, REG_GEN3_IRQCTL), rcar_gen3_thermal_read(tsc, REG_GEN3_IRQMSK), rcar_gen3_thermal_read(tsc, REG_GEN3_IRQEN));
+
+
+		printk("func %s line %d thcode1=%d thcode2=%d thcode3=%d",
+								__FUNCTION__, __LINE__,
+								rcar_gen3_thermal_read(tsc, REG_GEN3_THCODE1), rcar_gen3_thermal_read(tsc, REG_GEN3_THCODE2), rcar_gen3_thermal_read(tsc, REG_GEN3_THCODE3));
+
+
+
+
 		zone = devm_thermal_zone_of_sensor_register(dev, i, tsc,
 							    &rcar_gen3_tz_of_ops);
 		if (IS_ERR(zone)) {
@@ -452,6 +483,7 @@ static int rcar_gen3_thermal_probe(struct platform_device *pdev)
 
 error_unregister:
 	rcar_gen3_thermal_remove(pdev);
+	printk("Error register func %s line %d",__FUNCTION__, __LINE__);
 
 	return ret;
 }

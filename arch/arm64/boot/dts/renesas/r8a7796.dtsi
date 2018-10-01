@@ -427,9 +427,7 @@
 
 		tsc: thermal@e6198000 {
 			compatible = "renesas,r8a7796-thermal";
-			reg = <0 0xe6198000 0 0x100>,
-			      <0 0xe61a0000 0 0x100>,
-			      <0 0xe61a8000 0 0x100>;
+			reg = <0 0xe6198000 0 0x100>;
 			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>;
@@ -2488,32 +2486,6 @@
 			cooling-maps {
 				map0 {
 					trip = <&sensor2_passive>;
-					cooling-device = <&a57_0 5 5>;
-				};
-			};
-		};
-
-		sensor_thermal3: sensor-thermal3 {
-			polling-delay-passive = <250>;
-			polling-delay = <1000>;
-			thermal-sensors = <&tsc 2>;
-
-			trips {
-				sensor3_passive: sensor3-passive {
-					temperature = <95000>;
-					hysteresis = <1000>;
-					type = "passive";
-				};
-				sensor3_crit: sensor3-crit {
-					temperature = <120000>;
-					hysteresis = <1000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map0 {
-					trip = <&sensor3_passive>;
 					cooling-device = <&a57_0 5 5>;
 				};
 			};
