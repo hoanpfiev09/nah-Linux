@@ -289,7 +289,7 @@
 			#power-domain-cells = <1>;
 		};
 
-		tsc: thermal@e6198000 {
+		tsc: Hoan@Thien-Ha {
 			compatible = "renesas,r8a77965-thermal";
 			reg = <0 0xe6198000 0 0x100>,
 			      <0 0xe61a0000 0 0x100>,

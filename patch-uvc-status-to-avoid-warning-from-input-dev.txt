@@ -1,0 +1,16 @@
+diff --git a/drivers/media/usb/uvc/uvc_status.c b/drivers/media/usb/uvc/uvc_status.c
+index 0722dc6..a6e77e7 100644
+--- a/drivers/media/usb/uvc/uvc_status.c
++++ b/drivers/media/usb/uvc/uvc_status.c
+@@ -56,8 +56,10 @@ static int uvc_input_init(struct uvc_device *dev)
+ 
+ static void uvc_input_cleanup(struct uvc_device *dev)
+ {
+-	if (dev->input)
++	if (dev->input) {
+ 		input_unregister_device(dev->input);
++		dev->input = NULL;	/* To avoid duplicate unregister */
++	}
+ }
+ 
+ static void uvc_input_report_key(struct uvc_device *dev, unsigned int code,

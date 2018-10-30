@@ -1,0 +1,11 @@
+--- drivers/thermal/rcar_gen3_thermal.c
++++ drivers/thermal/rcar_gen3_thermal.c
+@@ -481,7 +489,7 @@ static int __maybe_unused rcar_gen3_thermal_resume(struct device *dev)
+ 		struct rcar_gen3_thermal_tsc *tsc = priv->tscs[i];
+ 
+ 		priv->thermal_init(tsc);
+-		rcar_gen3_thermal_set_trips(tsc, tsc->low, tsc->high);
++		rcar_gen3_thermal_set_irq_temp(tsc);
+ 	}
+ 
+ 	rcar_thermal_irq_set(priv, true);

@@ -1,0 +1,870 @@
+Out:   serial_sh
+Err:   serial_sh
+Net:   sh_eth
+Hit any key to stop autoboot:  0 
+sh_eth Waiting for PHY auto negotiation to complete.. done
+sh_eth: 100Base/Half
+BOOTP broadcast 1
+BOOTP broadcast 2
+BOOTP broadcast 3
+BOOTP broadcast 4
+BOOTP broadcast 5
+BOOTP broadcast 6
+DHCP client bound to address 192.168.1.28 (5762 ms)
+Using sh_eth device
+TFTP from server 192.168.1.8; our IP address is 192.168.1.28
+Filename 'koelsch/uImage.dtb'.
+Load address: 0x40007fc0
+Loading: #################################################################
+         #################################################################
+         #################################################################
+         #################################################################
+         ######################################################
+         5.9 MiB/s
+done
+Bytes transferred = 4607113 (464c89 hex)
+Automatic boot of image at addr 0x40007FC0 ...
+## Booting kernel from Legacy Image at 40007fc0 ...
+   Image Name:   Linux-v4.14.0-rcx
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4607049 Bytes = 4.4 MiB
+   Load Address: 40008000
+   Entry Point:  40008000
+   Verifying Checksum ... OK
+   XIP Kernel Image ... OK
+
+Starting kernel ...
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 4.19.0-rc7 (hoan@hoan-pfiev09) (gcc version 4.9.2 20140904 (prerelease) (crosstool-NG linaro-1.13.1-4.9-2014.09 - Linar8
+[    0.000000] CPU: ARMv7 Processor [413fc0f2] revision 2 (ARMv7), cr=10c5387d
+[    0.000000] CPU: div instructions available: patching division code
+[    0.000000] CPU: PIPT / VIPT nonaliasing data cache, PIPT instruction cache
+[    0.000000] OF: fdt: Machine model: Koelsch
+[    0.000000] OF: fdt: Ignoring memory block 0x200000000 - 0x240000000
+[    0.000000] debug: ignoring loglevel setting.
+[    0.000000] Memory policy: Data cache writealloc
+[    0.000000] cma: Reserved 256 MiB at 0x70000000
+[    0.000000] cma: Reserved 64 MiB at 0x6c000000
+[    0.000000] On node 0 totalpages: 262144
+[    0.000000]   Normal zone: 1536 pages used for memmap
+[    0.000000]   Normal zone: 0 pages reserved
+[    0.000000]   Normal zone: 196608 pages, LIFO batch:63
+[    0.000000]   HighMem zone: 65536 pages, LIFO batch:15
+[    0.000000] random: get_random_bytes called from start_kernel+0x84/0x45c with crng_init=0
+[    0.000000] percpu: Embedded 15 pages/cpu @(ptrval) s39168 r0 d22272 u61440
+[    0.000000] pcpu-alloc: s39168 r0 d22272 u61440 alloc=15*4096
+[    0.000000] pcpu-alloc: [0] 0 [0] 1 
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 260608
+[    0.000000] Kernel command line: console=ttySC0,115200 ignore_loglevel consoleblank=0 rw root=/dev/nfs nfsroot=192.168.1.8:/tftpboot/rootfs ip=198
+[    0.000000] Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 6, 262144 bytes)
+[    0.000000] Memory: 700432K/1048576K available (7168K kernel code, 523K rwdata, 1932K rodata, 1024K init, 283K bss, 20464K reserved, 327680K cma-)
+[    0.000000] Virtual kernel memory layout:
+[    0.000000]     vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+[    0.000000]     fixmap  : 0xffc00000 - 0xfff00000   (3072 kB)
+[    0.000000]     vmalloc : 0xf0800000 - 0xff800000   ( 240 MB)
+[    0.000000]     lowmem  : 0xc0000000 - 0xf0000000   ( 768 MB)
+[    0.000000]     pkmap   : 0xbfe00000 - 0xc0000000   (   2 MB)
+[    0.000000]       .text : 0x(ptrval) - 0x(ptrval)   (8160 kB)
+[    0.000000]       .init : 0x(ptrval) - 0x(ptrval)   (1024 kB)
+[    0.000000]       .data : 0x(ptrval) - 0x(ptrval)   ( 524 kB)
+[    0.000000]        .bss : 0x(ptrval) - 0x(ptrval)   ( 284 kB)
+[    0.000000] rcu: Hierarchical RCU implementation.
+[    0.000000] rcu:     RCU event tracing is enabled.
+[    0.000000] rcu:     RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=2.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000] NR_IRQS: 16, nr_irqs: 16, preallocated irqs: 16
+[    0.000000] arch_timer: cp15 timer(s) running at 10.00MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x24e6a1710, max_idle_ns: 440795202120 ns
+[    0.000004] sched_clock: 56 bits at 10MHz, resolution 100ns, wraps every 4398046511100ns
+[    0.000014] Switching to timer-based delay loop, resolution 100ns
+[    0.000287] Console: colour dummy device 80x30
+[    0.000317] Calibrating delay loop (skipped), value calculated using timer frequency.. 20.00 BogoMIPS (lpj=100000)
+[    0.000331] pid_max: default: 32768 minimum: 301
+[    0.000443] Mount-cache hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.000456] Mountpoint-cache hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.000877] CPU: Testing write buffer coherency: ok
+[    0.000906] CPU0: Spectre v2: firmware did not set auxiliary control register IBE bit, system vulnerable
+[    0.001102] CPU0: update cpu_capacity 1024
+[    0.001111] CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+[    0.001756] Setting up static identity map for 0x40100000 - 0x40100060
+[    0.001841] rcu: Hierarchical SRCU implementation.
+[    0.002145] Detected Renesas R-Car Gen2 r8a7791 ES3.0
+[    0.002697] smp: Bringing up secondary CPUs ...
+[    0.003890] CPU1: update cpu_capacity 1024
+[    0.003896] CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
+[    0.003901] CPU1: Spectre v2: firmware did not set auxiliary control register IBE bit, system vulnerable
+[    0.004036] smp: Brought up 1 node, 2 CPUs
+[    0.004046] SMP: Total of 2 processors activated (40.00 BogoMIPS).
+[    0.004053] CPU: All CPU(s) started in SVC mode.
+[    0.005028] devtmpfs: initialized
+[    0.011815] VFP support v0.3: implementor 41 architecture 4 part 30 variant f rev 0
+[    0.012123] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.012138] futex hash table entries: 512 (order: 3, 32768 bytes)
+[    0.016599] pinctrl core: initialized pinctrl subsystem
+[    0.017411] NET: Registered protocol family 16
+[    0.018436] DMA: preallocated 256 KiB pool for atomic coherent allocations
+[    0.019225] No ATAGs?
+[    0.019291] hw-breakpoint: found 5 (+1 reserved) breakpoint and 4 watchpoint registers.
+[    0.019303] hw-breakpoint: maximum watchpoint size is 8 bytes.
+[    0.019532] IRQ2 is asserted, installing da9063/da9210 regulator quirk
+[    0.022045] sh-pfc e6060000.pin-controller: r8a77910_pfc support registered
+[    0.041335] vgaarb: loaded
+[    0.041556] SCSI subsystem initialized
+[    0.041717] libata version 3.00 loaded.
+[    0.041860] usbcore: registered new interface driver usbfs
+[    0.041890] usbcore: registered new interface driver hub
+[    0.041934] usbcore: registered new device driver usb
+[    0.042563] i2c 6-0058: clearing da9063/da9210 interrupts
+[    0.043720] i2c 6-0058: IRQ2 is not asserted, removing quirk
+[    0.043863] i2c-sh_mobile e60b0000.i2c: I2C adapter 6, bus speed 100000 Hz
+[    0.044173] media: Linux media interface: v0.10
+[    0.044205] videodev: Linux video capture interface: v2.00
+[    0.044270] pps_core: LinuxPPS API ver. 1 registered
+[    0.044278] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.044293] PTP clock support registered
+[    0.044637] sh_cmt ffca0000.timer: ch0: used for clock events
+[    0.044651] sh_cmt ffca0000.timer: ch1: used as clock source
+[    0.044665] clocksource: ffca0000.timer: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 481789878094288 ns
+[    0.045129] Advanced Linux Sound Architecture Driver Initialized.
+[    0.045709] clocksource: Switched to clocksource arch_sys_counter
+[    0.087840] NET: Registered protocol family 2
+[    0.088290] tcp_listen_portaddr_hash hash table entries: 512 (order: 0, 6144 bytes)
+[    0.088310] TCP established hash table entries: 8192 (order: 3, 32768 bytes)
+[    0.088362] TCP bind hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.088453] TCP: Hash tables configured (established 8192 bind 8192)
+[    0.088515] UDP hash table entries: 512 (order: 2, 16384 bytes)
+[    0.088542] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes)
+[    0.088651] NET: Registered protocol family 1
+[    0.089010] RPC: Registered named UNIX socket transport module.
+[    0.089020] RPC: Registered udp transport module.
+[    0.089027] RPC: Registered tcp transport module.
+[    0.089033] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.089045] PCI: CLS 0 bytes, default 64
+[    0.089584] hw perfevents: enabled with armv7_cortex_a15 PMU driver, 7 counters available
+[    0.090900] workingset: timestamp_bits=30 max_order=18 bucket_order=0
+[    0.091243] NFS: Registering the id_resolver key type
+[    0.091267] Key type id_resolver registered
+[    0.091274] Key type id_legacy registered
+[    0.091292] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    0.091300] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[    0.092927] bounce: pool size: 64 pages
+[    0.092966] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 246)
+[    0.092976] io scheduler noop registered
+[    0.092983] io scheduler deadline registered
+[    0.093016] io scheduler cfq registered (default)
+[    0.093024] io scheduler mq-deadline registered
+[    0.093031] io scheduler kyber registered
+[    0.094113] gpio_rcar e6050000.gpio: driving 32 GPIOs
+[    0.094363] gpio_rcar e6051000.gpio: driving 26 GPIOs
+[    0.094603] gpio_rcar e6052000.gpio: driving 32 GPIOs
+[    0.094829] gpio_rcar e6053000.gpio: driving 32 GPIOs
+[    0.095061] gpio_rcar e6054000.gpio: driving 32 GPIOs
+[    0.095283] gpio_rcar e6055000.gpio: driving 32 GPIOs
+[    0.095516] gpio_rcar e6055400.gpio: driving 32 GPIOs
+[    0.095804] gpio_rcar e6055800.gpio: driving 26 GPIOs
+[    0.096727] pci-rcar-gen2 ee090000.pci: PCI: bus0 revision 11
+[    0.096850] pci-rcar-gen2 ee090000.pci: PCI host bridge to bus 0000:00
+[    0.096862] pci_bus 0000:00: root bus resource [mem 0xee080000-0xee0810ff]
+[    0.096871] pci_bus 0000:00: No busn resource found for root bus, will use [bus 00-ff]
+[    0.096903] pci 0000:00:00.0: [1033:0000] type 00 class 0x060000
+[    0.096932] pci 0000:00:00.0: reg 0x10: [mem 0xee090800-0xee090bff]
+[    0.096945] pci 0000:00:00.0: reg 0x14: [mem 0x40000000-0x7fffffff pref]
+[    0.097304] pci 0000:00:01.0: [1033:0035] type 00 class 0x0c0310
+[    0.097332] pci 0000:00:01.0: reg 0x10: [mem 0x00000000-0x00000fff]
+[    0.097399] pci 0000:00:01.0: supports D1 D2
+[    0.097407] pci 0000:00:01.0: PME# supported from D0 D1 D2 D3hot
+[    0.097640] pci 0000:00:02.0: [1033:00e0] type 00 class 0x0c0320
+[    0.097665] pci 0000:00:02.0: reg 0x10: [mem 0x00000000-0x000000ff]
+[    0.097729] pci 0000:00:02.0: supports D1 D2
+[    0.097737] pci 0000:00:02.0: PME# supported from D0 D1 D2 D3hot
+[    0.099825] PCI: bus0: Fast back to back transfers disabled
+[    0.099838] pci_bus 0000:00: busn_res: [bus 00-ff] end is updated to 00
+[    0.099857] pci 0000:00:01.0: BAR 0: assigned [mem 0xee080000-0xee080fff]
+[    0.099870] pci 0000:00:02.0: BAR 0: assigned [mem 0xee081000-0xee0810ff]
+[    0.099906] pci 0000:00:01.0: enabling device (0140 -> 0142)
+[    0.099948] pci 0000:00:02.0: enabling device (0140 -> 0142)
+[    0.100156] pci-rcar-gen2 ee0d0000.pci: PCI: bus0 revision 11
+[    0.100267] pci-rcar-gen2 ee0d0000.pci: PCI host bridge to bus 0001:01
+[    0.100277] pci_bus 0001:01: root bus resource [mem 0xee0c0000-0xee0c10ff]
+[    0.100286] pci_bus 0001:01: No busn resource found for root bus, will use [bus 01-ff]
+[    0.100309] pci 0001:01:00.0: [1033:0000] type 00 class 0x060000
+[    0.100332] pci 0001:01:00.0: reg 0x10: [mem 0xee0d0800-0xee0d0bff]
+[    0.100344] pci 0001:01:00.0: reg 0x14: [mem 0x40000000-0x7fffffff pref]
+[    0.100572] pci 0001:01:01.0: [1033:0035] type 00 class 0x0c0310
+[    0.100597] pci 0001:01:01.0: reg 0x10: [mem 0x00000000-0x00000fff]
+[    0.100661] pci 0001:01:01.0: supports D1 D2
+[    0.100670] pci 0001:01:01.0: PME# supported from D0 D1 D2 D3hot
+[    0.100885] pci 0001:01:02.0: [1033:00e0] type 00 class 0x0c0320
+[    0.100910] pci 0001:01:02.0: reg 0x10: [mem 0x00000000-0x000000ff]
+[    0.100974] pci 0001:01:02.0: supports D1 D2
+[    0.100982] pci 0001:01:02.0: PME# supported from D0 D1 D2 D3hot
+[    0.103106] PCI: bus1: Fast back to back transfers disabled
+[    0.103117] pci_bus 0001:01: busn_res: [bus 01-ff] end is updated to 01
+[    0.103131] pci 0001:01:01.0: BAR 0: assigned [mem 0xee0c0000-0xee0c0fff]
+[    0.103143] pci 0001:01:02.0: BAR 0: assigned [mem 0xee0c1000-0xee0c10ff]
+[    0.103173] pci 0001:01:01.0: enabling device (0140 -> 0142)
+[    0.103207] pci 0001:01:02.0: enabling device (0140 -> 0142)
+[    0.103553] rcar-pcie fe000000.pcie: host bridge /soc/pcie@fe000000 ranges:
+[    0.103581] rcar-pcie fe000000.pcie:    IO 0xfe100000..0xfe1fffff -> 0x00000000
+[    0.103605] rcar-pcie fe000000.pcie:   MEM 0xfe200000..0xfe3fffff -> 0xfe200000
+[    0.103625] rcar-pcie fe000000.pcie:   MEM 0x30000000..0x37ffffff -> 0x30000000
+[    0.103640] rcar-pcie fe000000.pcie:   MEM 0x38000000..0x3fffffff -> 0x38000000
+[    0.155844] rcar-pcie fe000000.pcie: PCIe link down
+[    0.166706] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    0.167769] SuperH (H)SCI(F) driver initialized
+[    0.168300] e6e60000.serial: ttySC0 at MMIO 0xe6e60000 (irq = 79, base_baud = 0) is a scif
+[    1.248151] console [ttySC0] enabled
+[    1.252252] e6e68000.serial: ttySC1 at MMIO 0xe6e68000 (irq = 80, base_baud = 0) is a scif
+[    1.262877] [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+[    1.269507] [drm] No driver support for vblank timestamp query.
+[    1.277678] scsi host0: sata_rcar
+[    1.281165] ata1: SATA max UDMA/133 irq 117
+[    1.286242] renesas_spi e6b10000.spi: DMA available
+[    1.292464] m25p80 spi0.0: s25fl512s (65536 Kbytes)
+[    1.297390] 3 fixed-partitions partitions found on MTD device spi0.0
+[    1.303741] Creating 3 MTD partitions on "spi0.0":
+[    1.308541] 0x000000000000-0x000000080000 : "loader"
+[    1.314138] 0x000000080000-0x000000600000 : "user"
+[    1.319520] 0x000000600000-0x000004000000 : "flash"
+[    1.324966] renesas_spi e6b10000.spi: probed
+[    1.330215] spi_sh_msiof e6e20000.spi: DMA available
+[    1.335972] libphy: Fixed MDIO Bus: probed
+[    1.340391] CAN device driver interface
+[    1.345374] libphy: sh_mii: probed
+[    1.349818] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    1.356364] ehci-pci: EHCI PCI platform driver
+[    1.360961] ehci-pci 0000:00:02.0: EHCI Host Controller
+[    1.366220] ehci-pci 0000:00:02.0: new USB bus registered, assigned bus number 1
+[    1.373822] ehci-pci 0000:00:02.0: irq 112, io mem 0xee081000
+[    1.405722] ehci-pci 0000:00:02.0: USB 2.0 started, EHCI 1.00
+[    1.412092] hub 1-0:1.0: USB hub found
+[    1.415896] hub 1-0:1.0: 1 port detected
+[    1.420262] ehci-pci 0001:01:02.0: EHCI Host Controller
+[    1.425501] ehci-pci 0001:01:02.0: new USB bus registered, assigned bus number 2
+[    1.433086] ehci-pci 0001:01:02.0: irq 113, io mem 0xee0c1000
+[    1.465720] ehci-pci 0001:01:02.0: USB 2.0 started, EHCI 1.00
+[    1.471999] hub 2-0:1.0: USB hub found
+[    1.475802] hub 2-0:1.0: 1 port detected
+[    1.480043] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    1.486254] ohci-pci: OHCI PCI platform driver
+[    1.490794] ohci-pci 0000:00:01.0: OHCI PCI host controller
+[    1.496391] ohci-pci 0000:00:01.0: new USB bus registered, assigned bus number 3
+[    1.503893] ohci-pci 0000:00:01.0: irq 112, io mem 0xee080000
+[    1.606276] hub 3-0:1.0: USB hub found
+[    1.610055] hub 3-0:1.0: 1 port detected
+[    1.614366] ohci-pci 0001:01:01.0: OHCI PCI host controller
+[    1.619977] ohci-pci 0001:01:01.0: new USB bus registered, assigned bus number 4
+[    1.627498] ohci-pci 0001:01:01.0: irq 113, io mem 0xee0c0000
+[    1.726271] hub 4-0:1.0: USB hub found
+[    1.730048] hub 4-0:1.0: 1 port detected
+[    1.734953] sh-pfc e6060000.pin-controller: pin GP_7_23 already requested by ee090000.pci; cannot claim for e6590000.usb
+[    1.735730] ata1: link resume succeeded after 1 retries
+[    1.745846] sh-pfc e6060000.pin-controller: pin-247 (e6590000.usb) status -22
+[    1.758198] sh-pfc e6060000.pin-controller: could not request pin 247 (GP_7_23) from group usb0  on device sh-pfc
+[    1.768468] renesas_usbhs e6590000.usb: Error applying setting, reverse things back
+[    1.776143] renesas_usbhs: probe of e6590000.usb failed with error -22
+[    1.782932] udc-core: couldn't find an available UDC - added [g_ether] to list of pending drivers
+[    1.792149] i2c /dev entries driver
+[    1.797348] i2c-rcar e6518000.i2c: probed
+[    1.802489] i2c-rcar e6530000.i2c: probed
+[    1.807243] adv7511 13-0039: 13-0039 supply avdd not found, using dummy regulator
+[    1.814789] adv7511 13-0039: Linked as a consumer to regulator.0
+[    1.820823] adv7511 13-0039: 13-0039 supply dvdd not found, using dummy regulator
+[    1.828357] adv7511 13-0039: 13-0039 supply pvdd not found, using dummy regulator
+[    1.835907] adv7511 13-0039: 13-0039 supply bgvdd not found, using dummy regulator
+[    1.843515] adv7511 13-0039: 13-0039 supply dvdd-3v not found, using dummy regulator
+[    1.855739] ata1: SATA link down (SStatus 0 SControl 300)
+[    1.865311] at24 13-0050: 256 byte r1ex24002 EEPROM, writable, 16 bytes/write
+[    1.873364] i2c-rcar e6520000.i2c: probed
+[    1.877927] adv7180 13-0020: chip found @ 0x20 (i2c-demux (master i2c-2))
+[    1.909848] random: fast init done
+[    1.988214] adv7612 13-004c: adv7612 found @ 0x98 (i2c-demux (master i2c-2))
+[    1.996076] rcar_jpu fe980000.jpeg-codec: encoder device registered as /dev/video0
+[    2.003643] rcar_jpu fe980000.jpeg-codec: decoder device registered as /dev/video1
+[    2.021803] rcar-vin e6ef0000.video: Device registered as video25
+[    2.028786] rcar-vin e6ef1000.video: Device registered as video26
+[    2.035186] usbcore: registered new interface driver uvcvideo
+[    2.040950] USB Video Class driver (1.1.1)
+[    2.045044] gspca_main: v2.14.0 registered
+[    2.049181] usbcore: registered new interface driver Philips webcam
+[    2.058228] rcar_thermal e61f0000.thermal: 1 sensor probed
+[    2.065780] sh_mobile_sdhi ee100000.sd: Got CD GPIO
+[    2.070691] sh_mobile_sdhi ee100000.sd: Got WP GPIO
+[    2.076133] sh_mobile_sdhi ee140000.sd: Got CD GPIO
+[    2.081040] sh_mobile_sdhi ee140000.sd: Got WP GPIO
+[    2.086486] sh_mobile_sdhi ee160000.sd: Got CD GPIO
+[    2.092599] usbcore: registered new interface driver usbhid
+[    2.098189] usbhid: USB HID core driver
+[    2.106403] rcar_sound ec500000.sound: probed
+[    2.111140] NET: Registered protocol family 10
+[    2.116175] Segment Routing with IPv6
+[    2.119889] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    2.126277] NET: Registered protocol family 17
+[    2.130727] can: controller area network core (rev 20170425 abi 9)
+[    2.136964] NET: Registered protocol family 29
+[    2.141406] can: raw protocol (rev 20170425)
+[    2.145673] can: broadcast manager protocol (rev 20170425 t)
+[    2.151347] can: netlink gateway (rev 20170425) max_hops=1
+[    2.156910] Key type dns_resolver registered
+[    2.161279] Registering SWP/SWPB emulation handler
+[    2.176931] renesas_irqc e61c0000.interrupt-controller: driving 10 irqs
+[    2.186596] DA9210: Bringing 1030000uV into 1000000-1000000uV
+[    2.198695] [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+[    2.205308] [drm] No driver support for vblank timestamp query.
+[    2.211822] rcar-du feb00000.display: no connector for encoder /soc/lvds@feb90000, skipping
+[    2.221077] [drm] Cannot find any crtc or sizes
+[    2.226013] [drm] Initialized rcar-du 1.0.0 20130110 for feb00000.display on minor 0
+[    2.233754] [drm] Device feb00000.display probed
+[    2.239036] [drm] Cannot find any crtc or sizes
+[    2.247571] da9063 6-0058: Device detected (chip-ID: 0x61, var-ID: 0x50)
+[    2.266353] da9063-watchdog da9063-watchdog: DMA mask not set
+[    2.273771] da9063-rtc da9063-rtc: DMA mask not set
+[    2.292498] da9063-rtc da9063-rtc: rtc core: registered da9063-rtc as rtc0
+[    2.304881] libphy: sh_mii: probed
+[    2.309402] sh-eth ee700000.ethernet eth0: Base address at 0xee700000, 2e:09:0a:00:6e:89, IRQ 118.
+[    2.319134] cpu cpu0: Linked as a consumer to regulator.7
+[    2.324584] cpu cpu0: Dropping the link to regulator.7
+[    2.330445] cpu cpu0: Linked as a consumer to regulator.7
+[    2.340564] sh_mobile_sdhi ee100000.sd: Got CD GPIO
+[    2.345475] sh_mobile_sdhi ee100000.sd: Got WP GPIO
+[    2.350471] sh_mobile_sdhi ee100000.sd: Linked as a consumer to regulator.1
+[    2.357505] sh_mobile_sdhi ee100000.sd: Linked as a consumer to regulator.4
+[    2.475969] sh_mobile_sdhi ee100000.sd: mmc0 base at 0xee100000 max clock rate 195 MHz
+[    2.484612] sh_mobile_sdhi ee140000.sd: Got CD GPIO
+[    2.489548] sh_mobile_sdhi ee140000.sd: Got WP GPIO
+[    2.494516] sh_mobile_sdhi ee140000.sd: Linked as a consumer to regulator.2
+[    2.501547] sh_mobile_sdhi ee140000.sd: Linked as a consumer to regulator.5
+[    2.625927] sh_mobile_sdhi ee140000.sd: mmc1 base at 0xee140000 max clock rate 97 MHz
+[    2.634485] sh_mobile_sdhi ee160000.sd: Got CD GPIO
+[    2.639490] sh_mobile_sdhi ee160000.sd: Linked as a consumer to regulator.3
+[    2.646516] sh_mobile_sdhi ee160000.sd: Linked as a consumer to regulator.6
+[    2.765924] sh_mobile_sdhi ee160000.sd: mmc2 base at 0xee160000 max clock rate 97 MHz
+[    2.775473] asoc-simple-card sound: ak4642-hifi <-> ec500000.sound mapping ok
+[    2.785483] input: keyboard as /devices/platform/keyboard/input/input0
+[    2.793989] da9063-rtc da9063-rtc: setting system clock to 2000-01-01 00:00:14 UTC (946684814)
+[    2.907578] Micrel KSZ8041RNLI ee700000.ethernet-ffffffff:01: attached PHY driver [Micrel KSZ8041RNLI] (mii_bus:phy_addr=ee700000.ethernet-ffffff)
+[    2.922008] IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready
+[    4.857479] sh-eth ee700000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[    4.875727] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[    4.905795] IP-Config: Guessing netmask 255.255.255.0
+[    4.910844] IP-Config: Complete:
+[    4.914072]      device=eth0, hwaddr=2e:09:0a:00:6e:89, ipaddr=192.168.1.28, mask=255.255.255.0, gw=255.255.255.255
+[    4.924521]      host=192.168.1.28, domain=, nis-domain=(none)
+[    4.930359]      bootserver=255.255.255.255, rootserver=192.168.1.8, rootpath=
+[    4.937903] SDHI0 Vcc: disabling
+[    4.941131] SDHI1 Vcc: disabling
+[    4.944357] SDHI2 Vcc: disabling
+[    4.947596] SDHI0 VccQ: disabling
+[    4.950909] SDHI1 VccQ: disabling
+[    4.954220] SDHI2 VccQ: disabling
+[    4.957553] ALSA device list:
+[    4.960517]   #0: rsnd-dai.0-ak4642-hifi
+[   10.050982] VFS: Mounted root (nfs filesystem) on device 0:15.
+[   10.057275] devtmpfs: mounted
+[   10.060885] Freeing unused kernel memory: 1024K
+[   10.115797] Run /sbin/init as init process
+Mount failed for selinuxfs on /sys/fs/selinux:  No such file or directory
+[   10.760334] random: init: uninitialized urandom read (12 bytes read)
+[   11.292541] init: plymouth-upstart-bridge main process (130) terminated with status 1
+[   11.300519] init: plymouth-upstart-bridge main process ended, respawning
+[   11.797523] random: mountall: uninitialized urandom read (12 bytes read)
+[   17.235161] random: crng init done
+[   17.253781] systemd-udevd[241]: starting version 204
+[   19.563328] init: idmapd main process (313) terminated with status 1
+[   19.575392] init: idmapd main process ended, respawning
+[   19.610769] systemd-udevd[295]: could not open moddep file '/lib/modules/4.19.0-rc7/modules.dep.bin'
+[   20.374396] init: udev-fallback-graphics main process (437) terminated with status 1
+ * Starting Mount filesystems on boot[ OK ]
+ * Starting Signal sysvinit that the rootfs is mounted[ OK ]
+ * Starting Populate /dev filesystem[ OK ]
+ * Stopping Populate /dev filesystem[ OK ]
+ * Starting Fix-up /sys/kernel/debug filesystem[ OK ]
+ * Stopping Fix-up /sys/kernel/debug filesystem[ OK ]
+ * Starting Clean /tmp directory[ OK ]
+ * Starting Populate and link to /run filesystem[ OK ]
+ * Stopping Track if upstart is running in a container[ OK ]
+ * Stopping Clean /tmp directory[ OK ]
+ * Stopping Populate and link to /run filesystem[ OK ]
+ * Starting set console keymap[ OK ]
+ * Starting Signal sysvinit that virtual filesystems are mounted[ OK ]
+ * Starting Signal sysvinit that virtual filesystems are mounted[ OK ]
+ * Starting set sysctls from /etc/sysctl.conf[ OK ]
+ * Starting Bridge udev events into upstart[ OK ]
+ * Stopping set console keymap[ OK ]
+ * Stopping set sysctls from /etc/sysctl.conf[ OK ]
+ * Starting Signal sysvinit that local filesystems are mounted[ OK ]
+ * Starting Signal sysvinit that remote filesystems are mounted[ OK ]
+ * Starting device node and kernel event manager[ OK ]
+ * Starting flush early job output to logs[ OK ]
+ * Stopping Mount filesystems on boot[ OK ]
+ * Stopping flush early job output to logs[ OK ]
+ * Starting load modules from /etc/modules[ OK ]
+ * Starting cold plug devices[ OK ]
+ * Starting log initial device creation[ OK ]
+ * Stopping load modules from /etc/modules[ OK ]
+ * Starting Bridge file events into upstart[ OK ]
+ * Starting NFSv4 id <-> name mapper[ OK ]
+ * Stopping rpcsec_gss daemon[ OK ]
+ * Starting configure network device security[ OK ]
+ * Starting system logging daemon[ OK ]
+ * Starting D-Bus system message bus[ OK ]
+ * Starting configure network device[ OK ]
+ * Starting configure network device security[ OK ]
+ * Starting configure network device security[ OK ]
+ * Starting configure network device[ OK ]
+ * Stopping cold plug devices[ OK ]
+ * Stopping log initial device creation[ OK ]
+ * Starting load fallback graphics devices[ OK ]
+ * Starting configure network device security[ OK ]
+ * Starting load fallback graphics devices[fail]
+ * Starting save udev log and update rules[ OK ]
+ * Starting SystemD login management service[ OK ]
+ * Starting Mount network filesystems[ OK ]
+ * Starting Upstart job to start rpcbind on boot only[ OK ]
+ * Starting Failsafe Boot Delay[ OK ]
+ * Starting set console font[ OK ]
+ * Stopping Upstart job to start rpcbind on boot only[ OK ]
+ * Stopping set console font[ OK ]
+ * Starting userspace bootsplash[ OK ]
+ * Starting NFSv4 id <-> name mapper[ OK ]
+[   24.116837] init: idmapd main process (490) terminated with status 1
+[   24.123233] init: idmapd main process ended, respawning
+ * Stopping save udev log and update rules[ OK ]
+ * Stopping userspace bootsplash[ OK ]
+ * Starting Send an event to indicate plymouth is up[ OK ]
+ * Stopping Mount network filesystems[ OK ]
+ * Stopping Send an event to indicate plymouth is up[ OK ]
+ * Starting configure network device[ OK ]
+   24.392931] init: failsafe main process (456) killed by TERM signal
+ * Starting configure virtual network devices[ OK ]
+ * Stopping Failsafe Boot Delay[ OK ]
+ * Starting System V initialisation compatibility[ OK ]
+[   24.794866] init: Failed to obtain startpar-bridge instance: Unknown parameter: INSTANCE
+ * Starting RPC portmapper replacement[ OK ]
+ * Starting Bridge socket events into upstart[ OK ]
+ * Starting NSM status monitor[ OK ]
+ * Starting NFSv4 id <-> name mapper[ OK ]
+No sensors found!
+Make sure you loaded all the kernel drivers you ne[ed. 
+dry   s2en5so.rs-5d5etect to8 fin4d4 6o]u ti wnhiich tth:e se airdem.a
+  main process (604) terminated with status 1
+[   25.571906] init: idmapd main process ended, respawning
+No sensors found!
+Make sure you loaded all the kernel drivers you need.
+Try sensors-detect to find out which these are.
+[ OK ]ting sensors limits        
+ * Starting NFSv4 id <-> name mapper[ OK ]
+[   26.964530] init: idmapd main process (649) terminated with status 1
+[   26.971528] init: idmapd main process ended, respawning
+[ OK ]ting up X socket directories...        
+ * Starting NFSv4 id <-> name mapper[ OK ]
+[   28.360791] init: idmapd main process (676) terminated with status 1
+[   28.367313] init: idmapd main process ended, respawning
+ * Stopping System V initialisation compatibility[ OK ]
+ * Starting System V runlevel compatibility[ OK ]
+ * Starting Restore Sound Card State[ OK ]
+ * Starting save kernel messages[ OK ]
+[   29.887818] init: alsa-restore main process (704) terminated with status 99
+ * Starting regular background program processing daemon[ OK ]
+ * Not starting NFS kernel daemon: no support in current kernel.
+ * Starting Restore Sound Card State[fail]
+ * Stopping Restore Sound Card State[ OK ]
+ * Starting NFSv4 id <-> name mapper[ OK ]
+[   30.571628] init: idmapd main process (758) terminated with status 1
+[   30.578682] init: idmapd main process ended, respawning
+ * Stopping System V runlevel compatibility[ OK ]
+[   31.635480] init: tty1 main process (794) killed by TERM signal
+
+[   32.169594] init: plymouth-upstart-bridge main process ended, respawning
+[   32.700319] init: idmapd main process (817) terminated with status 1
+[   32.706804] init: idmapd main process ended, respawning
+Last login: Sat Jan  1 00:00:39 UTC 2000 on tty1
+[   33.956032] init: idmapd main process (841) terminated with status 1
+[   33.962505] init: idmapd main process ended, respawning
+Welcome to Linaro 14.04 (GNU/Linux 4.19.0-rc7 armv7l)
+
+ * Documentation:  https://wiki.linaro.org/
+root@linaro-nano:~# [   35.005348] init: idmapd main process (885) terminated with status 1
+[   35.011908] init: idmapd main process ended, respawning
+[   36.116581] init: idmapd main process (898) terminated with status 1
+[   36.123036] init: idmapd main process ended, respawning
+[   37.116597] init: idmapd main process (911) terminated with status 1
+[   37.123041] init: idmapd main process ended, respawning
+[   38.425079] init: idmapd main process (924) terminated with status 1
+[   38.431611] init: idmapd main process ended, respawning
+[   39.476042] init: idmapd main process (937) terminated with status 1
+[   39.482463] init: idmapd main process ended, respawning
+[   40.979238] init: idmapd main process (950) terminated with status 1
+[   40.985661] init: idmapd main process ended, respawning
+[   41.995253] init: idmapd main process (963) terminated with status 1
+[   42.001751] init: idmapd main process ended, respawning
+[   43.178634] init: idmapd main process (976) terminated with status 1
+[   43.185083] init: idmapd main process ended, respawning
+
+root@linaro-nano:~# service idmapd stop
+idmapd stop/waiting
+root@linaro-nano:~# [   51.895724] usb 2-1: new high-speed USB device number 2 using ehci-pci
+[   52.188111] uvcvideo: Found UVC 1.00 device USB 2.0 Camera (0c45:6340)
+[   52.215026] uvcvideo 2-1:1.0: Entity type for entity Extension 4 was not initialized!
+[   52.222885] uvcvideo 2-1:1.0: Entity type for entity Processing 3 was not initialized!
+[   52.230840] uvcvideo 2-1:1.0: Entity type for entity Camera 1 was not initialized!
+[   52.238766] input: USB 2.0 Camera: HD 720P Webcam as /devices/platform/soc/ee0d0000.pci/pci0001:01/0001:01:02.0/usb2/2-1/2-1:1.0/input/input1
+[   52.350847] systemd-udevd[998]: Failed to apply ACL on /dev/video27: Operation not supported
+[   52.362715] systemd-udevd[998]: Failed to apply ACL on /dev/video27: Operation not supported
+[   52.367269] systemd-udevd[1002]: Failed to apply ACL on /dev/video28: Operation not supported
+[   52.379901] systemd-udevd[1002]: Failed to apply ACL on /dev/video28: Operation not supported
+
+root@linaro-nano:~# 
+root@linaro-nano:~# stty cols 300
+root@linaro-nano:~# 
+root@linaro-nano:~# gst-launch-1.0 v4l2src  device="/dev/video27" ! jpegenc ! avimux ! filesink location=/home/output.avi                            
+Setting pipeline to PAUSED ...
+Pipeline is live and does not need PREROLL ...
+Setting pipeline to PLAYING ...
+New clock: GstSystemClock
+[  114.037609] usb 2-1: USB disconnect, device number 2
+[  114.043215] uvcvideo: Failed to resubmit video URB (-19).
+[  114.043226] uvcvideo: Failed to resubmit video URB (-19).
+[  114.048748] uvcvideo: Failed to resubmit video URB (-19).
+[  114.054235] uvcvideo: Failed to resubmit video URB (-19).
+[  114.054245] uvcvideo: Failed to resubmit video URB (-19).
+^Chandling interrupt.
+Interrupt: Stopping pipeline ...
+Execution ended after 0:00:09.388083700
+Setting pipeline to PAUSED ...
+Setting pipeline to READY ...
+Setting pipeline to NULL ...
+
+Freeing pipeline ...
+[  137.645822] ------------[ cut here ]------------
+[  137.650501] WARNING: CPU: 0 PID: 1013 at fs/sysfs/group.c:255 sysfs_remove_group+0x58/0x9c
+[  137.658879] sysfs group 'power' not found for kobject 'event1'
+[  137.664872] CPU: 0 PID: 1013 Comm: gmain Not tainted 4.19.0-rc7 #785
+[  137.671235] Hardware name: Generic R-Car Gen2 (Flattened Device Tree)
+[  137.677673] Backtrace: 
+[  137.680130] [<c010c418>] (dump_backtrace) from [<c010c688>] (show_stack+0x18/0x1c)
+[  137.687698]  r7:c0977d10 r6:c02a6ec4 r5:60010013 r4:00000000
+[  137.693363] [<c010c670>] (show_stack) from [<c078f460>] (dump_stack+0x84/0xa4)
+[  137.700588] [<c078f3dc>] (dump_stack) from [<c0121020>] (__warn+0xdc/0x10c)
+[  137.707545]  r5:00000000 r4:ea63fbb4
+[  137.711121] [<c0120f44>] (__warn) from [<c012109c>] (warn_slowpath_fmt+0x4c/0x6c)
+[  137.718602]  r9:00000008 r8:00000000 r7:eb2e3190 r6:eab74460 r5:c0891a54 r4:c0b04c08
+[  137.726345] [<c0121054>] (warn_slowpath_fmt) from [<c02a6ec4>] (sysfs_remove_group+0x58/0x9c)
+[  137.734865]  r3:c0891acc r2:c0977daf
+[  137.738437]  r4:00000000
+[  137.740973] [<c02a6e6c>] (sysfs_remove_group) from [<c047ab9c>] (dpm_sysfs_remove+0x4c/0x54)
+[  137.749407]  r6:eab74458 r5:c0891a38 r4:eab74460
+[  137.754026] [<c047ab50>] (dpm_sysfs_remove) from [<c04700f8>] (device_del+0x4c/0x2c0)
+[  137.761853]  r7:eb2e3190 r6:c0b04c08 r5:eab745f8 r4:eab74458
+[  137.767515] [<c04700ac>] (device_del) from [<c02407fc>] (cdev_device_del+0x1c/0x34)
+[  137.775168]  r9:00000008 r8:00000000 r7:eaace010 r6:eab74404 r5:eab745f8 r4:eab74458
+[  137.782912] [<c02407e0>] (cdev_device_del) from [<c055830c>] (evdev_disconnect+0x24/0x4c)
+[  137.791085]  r5:eab74458 r4:eab74400
+[  137.794660] [<c05582e8>] (evdev_disconnect) from [<c0554524>] (__input_unregister_device+0xb4/0x148)
+[  137.803788]  r7:eaace010 r6:eb2e331c r5:eb2e3330 r4:eb2e3000
+[  137.809447] [<c0554470>] (__input_unregister_device) from [<c05567ec>] (input_unregister_device+0x54/0x74)
+[  137.819096]  r7:eaace010 r6:ea4e2000 r5:00000000 r4:eb2e3000
+[  137.824757] [<c0556798>] (input_unregister_device) from [<c05bbef0>] (uvc_status_cleanup+0x38/0x3c)
+[  137.833797]  r5:00000000 r4:ea4e2000
+[  137.837375] [<c05bbeb8>] (uvc_status_cleanup) from [<c05b1a90>] (uvc_delete+0x1c/0x124)
+[  137.845374]  r5:00000000 r4:ea4e2260
+[  137.848950] [<c05b1a74>] (uvc_delete) from [<c05b1bc8>] (uvc_release+0x30/0x34)
+[  137.856256]  r9:00000008 r8:00000000 r7:eaace010 r6:c0bc26c8 r5:00000000 r4:ea4e2260
+[  137.864000] [<c05b1b98>] (uvc_release) from [<c057cb00>] (v4l2_device_release+0xcc/0xec)
+[  137.872085]  r5:00000000 r4:eaace100
+[  137.875659] [<c057ca34>] (v4l2_device_release) from [<c046d1a0>] (device_release+0x64/0x98)
+[  137.884007]  r9:00000008 r8:eb150710 r7:ea115880 r6:ea590900 r5:eaace100 r4:eaace108
+[  137.891749] [<c046d13c>] (device_release) from [<c0793b18>] (kobject_put+0xa0/0xc0)
+[  137.899402]  r7:ea115880 r6:c0b5074c r5:ea5089c0 r4:eaace108
+[  137.905060] [<c0793a78>] (kobject_put) from [<c046e09c>] (put_device+0x1c/0x20)
+[  137.912364]  r6:00000000 r5:eaace010 r4:00000000
+[  137.916980] [<c046e080>] (put_device) from [<c057cc00>] (v4l2_release+0x68/0x78)
+[  137.924374] [<c057cb98>] (v4l2_release) from [<c023d8a4>] (__fput+0xe8/0x1a4)
+[  137.931505]  r5:ea73f4f8 r4:ea4c0180
+[  137.935079] [<c023d7bc>] (__fput) from [<c023d9bc>] (____fput+0x10/0x14)
+[  137.941777]  r10:ea63fed8 r9:ea63fe3c r8:00000001 r7:ea4b403c r6:c0b83e74 r5:ea5cc840
+[  137.949602]  r4:00000000
+[  137.952136] [<c023d9ac>] (____fput) from [<c013e448>] (task_work_run+0xb4/0xc8)
+[  137.959443] [<c013e394>] (task_work_run) from [<c01259d4>] (do_exit+0x4d8/0x9dc)
+[  137.966835]  r7:ea4b403c r6:00000444 r5:ea4b4000 r4:ea5cc840
+[  137.972492] [<c01254fc>] (do_exit) from [<c0125f68>] (do_group_exit+0x54/0xd8)
+[  137.979709]  r7:ea63e000
+[  137.982242] [<c0125f14>] (do_group_exit) from [<c0131178>] (get_signal+0x558/0x610)
+[  137.989895]  r7:ea63e000 r6:ea63fec4 r5:eab7bf84 r4:00000009
+[  137.995552] [<c0130c20>] (get_signal) from [<c010b6c0>] (do_signal+0xa0/0x480)
+[  138.002772]  r10:000000a8 r9:b6d61d22 r8:fffffdfc r7:b6d61d20 r6:ea63ffb0 r5:c0b04c08
+[  138.010596]  r4:ffffffff
+[  138.013128] [<c010b620>] (do_signal) from [<c010bc14>] (do_work_pending+0x58/0xdc)
+[  138.020695]  r10:000000a8 r9:ea63e000 r8:c0101204 r7:000000a8 r6:ea63e010 r5:ea63ffb0
+[  138.028519]  r4:c0101204
+[  138.031051] [<c010bbbc>] (do_work_pending) from [<c010106c>] (slow_work_pending+0xc/0x20)
+[  138.039224] Exception stack(0xea63ffb0 to 0xea63fff8)
+[  138.044273] ffa0:                                     b5600478 00000001 ffffffff ffffffff
+[  138.052448] ffc0: 001605c8 00000001 b5600478 000000a8 b6e1a2a5 00000001 00000001 beb18190
+[  138.060622] ffe0: 00000000 b5fb7de8 b6d61d1b b6d61d20 80070030 b5600478
+[  138.067234]  r7:000000a8 r6:b5600478 r5:00000001 r4:001605c8
+[  138.072937] ---[ end trace 716be8ee8dc0ef03 ]---
+[  138.115767] ------------[ cut here ]------------
+[  138.120458] WARNING: CPU: 0 PID: 1013 at fs/sysfs/group.c:255 sysfs_remove_group+0x58/0x9c
+[  138.128780] sysfs group 'power' not found for kobject 'input1'
+[  138.134626] CPU: 0 PID: 1013 Comm: gmain Tainted: G        W         4.19.0-rc7 #785
+[  138.142369] Hardware name: Generic R-Car Gen2 (Flattened Device Tree)
+[  138.148806] Backtrace: 
+[  138.151260] [<c010c418>] (dump_backtrace) from [<c010c688>] (show_stack+0x18/0x1c)
+[  138.158828]  r7:c0977d10 r6:c02a6ec4 r5:600d0013 r4:00000000
+[  138.164492] [<c010c670>] (show_stack) from [<c078f460>] (dump_stack+0x84/0xa4)
+[  138.171718] [<c078f3dc>] (dump_stack) from [<c0121020>] (__warn+0xdc/0x10c)
+[  138.178675]  r5:00000000 r4:ea63fbec
+[  138.182251] [<c0120f44>] (__warn) from [<c012109c>] (warn_slowpath_fmt+0x4c/0x6c)
+[  138.189731]  r9:00000008 r8:00000000 r7:eaa1d820 r6:eb2e3198 r5:c0891a54 r4:c0b04c08
+[  138.197474] [<c0121054>] (warn_slowpath_fmt) from [<c02a6ec4>] (sysfs_remove_group+0x58/0x9c)
+[  138.205994]  r3:c0891acc r2:c0977daf
+[  138.209565]  r4:00000000
+[  138.212101] [<c02a6e6c>] (sysfs_remove_group) from [<c047ab9c>] (dpm_sysfs_remove+0x4c/0x54)
+[  138.220534]  r6:eb2e3190 r5:c0891a38 r4:eb2e3198
+[  138.225153] [<c047ab50>] (dpm_sysfs_remove) from [<c04700f8>] (device_del+0x4c/0x2c0)
+[  138.232980]  r7:eaa1d820 r6:c0b04c08 r5:eb2e3330 r4:eb2e3190
+[  138.238640] [<c04700ac>] (device_del) from [<c05545a4>] (__input_unregister_device+0x134/0x148)
+[  138.247334]  r9:00000008 r8:00000000 r7:eaace010 r6:eb2e331c r5:eb2e3330 r4:eb2e3000
+[  138.255077] [<c0554470>] (__input_unregister_device) from [<c05567ec>] (input_unregister_device+0x54/0x74)
+[  138.264726]  r7:eaace010 r6:ea4e2000 r5:00000000 r4:eb2e3000
+[  138.270388] [<c0556798>] (input_unregister_device) from [<c05bbef0>] (uvc_status_cleanup+0x38/0x3c)
+[  138.279428]  r5:00000000 r4:ea4e2000
+[  138.283006] [<c05bbeb8>] (uvc_status_cleanup) from [<c05b1a90>] (uvc_delete+0x1c/0x124)
+[  138.291005]  r5:00000000 r4:ea4e2260
+[  138.294580] [<c05b1a74>] (uvc_delete) from [<c05b1bc8>] (uvc_release+0x30/0x34)
+[  138.301887]  r9:00000008 r8:00000000 r7:eaace010 r6:c0bc26c8 r5:00000000 r4:ea4e2260
+[  138.309630] [<c05b1b98>] (uvc_release) from [<c057cb00>] (v4l2_device_release+0xcc/0xec)
+[  138.317716]  r5:00000000 r4:eaace100
+[  138.321290] [<c057ca34>] (v4l2_device_release) from [<c046d1a0>] (device_release+0x64/0x98)
+[  138.329638]  r9:00000008 r8:eb150710 r7:ea115880 r6:ea590900 r5:eaace100 r4:eaace108
+[  138.337380] [<c046d13c>] (device_release) from [<c0793b18>] (kobject_put+0xa0/0xc0)
+[  138.345033]  r7:ea115880 r6:c0b5074c r5:ea5089c0 r4:eaace108
+[  138.350690] [<c0793a78>] (kobject_put) from [<c046e09c>] (put_device+0x1c/0x20)
+[  138.357995]  r6:00000000 r5:eaace010 r4:00000000
+[  138.362611] [<c046e080>] (put_device) from [<c057cc00>] (v4l2_release+0x68/0x78)
+[  138.370007] [<c057cb98>] (v4l2_release) from [<c023d8a4>] (__fput+0xe8/0x1a4)
+[  138.377138]  r5:ea73f4f8 r4:ea4c0180
+[  138.380712] [<c023d7bc>] (__fput) from [<c023d9bc>] (____fput+0x10/0x14)
+[  138.387410]  r10:ea63fed8 r9:ea63fe3c r8:00000001 r7:ea4b403c r6:c0b83e74 r5:ea5cc840
+[  138.395235]  r4:00000000
+[  138.397770] [<c023d9ac>] (____fput) from [<c013e448>] (task_work_run+0xb4/0xc8)
+[  138.405077] [<c013e394>] (task_work_run) from [<c01259d4>] (do_exit+0x4d8/0x9dc)
+[  138.412469]  r7:ea4b403c r6:00000444 r5:ea4b4000 r4:ea5cc840
+[  138.418126] [<c01254fc>] (do_exit) from [<c0125f68>] (do_group_exit+0x54/0xd8)
+[  138.425343]  r7:ea63e000
+[  138.427876] [<c0125f14>] (do_group_exit) from [<c0131178>] (get_signal+0x558/0x610)
+[  138.435528]  r7:ea63e000 r6:ea63fec4 r5:eab7bf84 r4:00000009
+[  138.441186] [<c0130c20>] (get_signal) from [<c010b6c0>] (do_signal+0xa0/0x480)
+[  138.448405]  r10:000000a8 r9:b6d61d22 r8:fffffdfc r7:b6d61d20 r6:ea63ffb0 r5:c0b04c08
+[  138.456230]  r4:ffffffff
+[  138.458762] [<c010b620>] (do_signal) from [<c010bc14>] (do_work_pending+0x58/0xdc)
+[  138.466329]  r10:000000a8 r9:ea63e000 r8:c0101204 r7:000000a8 r6:ea63e010 r5:ea63ffb0
+[  138.474153]  r4:c0101204
+[  138.476686] [<c010bbbc>] (do_work_pending) from [<c010106c>] (slow_work_pending+0xc/0x20)
+[  138.484858] Exception stack(0xea63ffb0 to 0xea63fff8)
+[  138.489907] ffa0:                                     b5600478 00000001 ffffffff ffffffff
+[  138.498082] ffc0: 001605c8 00000001 b5600478 000000a8 b6e1a2a5 00000001 00000001 beb18190
+[  138.506256] ffe0: 00000000 b5fb7de8 b6d61d1b b6d61d20 80070030 b5600478
+[  138.512867]  r7:000000a8 r6:b5600478 r5:00000001 r4:001605c8
+[  138.518547] ---[ end trace 716be8ee8dc0ef04 ]---
+[  138.523186] ------------[ cut here ]------------
+[  138.527823] WARNING: CPU: 0 PID: 1013 at fs/sysfs/group.c:255 sysfs_remove_group+0x58/0x9c
+[  138.536092] sysfs group 'id' not found for kobject 'input1'
+[  138.541663] CPU: 0 PID: 1013 Comm: gmain Tainted: G        W         4.19.0-rc7 #785
+[  138.549401] Hardware name: Generic R-Car Gen2 (Flattened Device Tree)
+[  138.555837] Backtrace: 
+[  138.558287] [<c010c418>] (dump_backtrace) from [<c010c688>] (show_stack+0x18/0x1c)
+[  138.565854]  r7:c0977d10 r6:c02a6ec4 r5:600d0013 r4:00000000
+[  138.571512] [<c010c670>] (show_stack) from [<c078f460>] (dump_stack+0x84/0xa4)
+[  138.578735] [<c078f3dc>] (dump_stack) from [<c0121020>] (__warn+0xdc/0x10c)
+[  138.585692]  r5:00000000 r4:ea63fbd4
+[  138.589268] [<c0120f44>] (__warn) from [<c012109c>] (warn_slowpath_fmt+0x4c/0x6c)
+[  138.596748]  r9:eb2e31e8 r8:00000000 r7:c08a1f6c r6:eb2e3198 r5:c08a200c r4:c0b04c08
+[  138.604490] [<c0121054>] (warn_slowpath_fmt) from [<c02a6ec4>] (sysfs_remove_group+0x58/0x9c)
+[  138.613010]  r3:c09bb209 r2:c0977daf
+[  138.616581]  r4:00000000
+[  138.619114] [<c02a6e6c>] (sysfs_remove_group) from [<c02a6fa0>] (sysfs_remove_groups+0x30/0x38)
+[  138.627807]  r6:c0b5df44 r5:eb2e3198 r4:c0b5dfa4
+[  138.632425] [<c02a6f70>] (sysfs_remove_groups) from [<c046dcf0>] (device_remove_attrs+0x44/0x60)
+[  138.641205]  r5:eb2e3198 r4:eb2e3190
+[  138.644780] [<c046dcac>] (device_remove_attrs) from [<c04701fc>] (device_del+0x150/0x2c0)
+[  138.652953]  r7:eaa1d820 r6:c0b04c08 r5:eb0d3038 r4:eb2e3190
+[  138.658611] [<c04700ac>] (device_del) from [<c05545a4>] (__input_unregister_device+0x134/0x148)
+[  138.667306]  r9:00000008 r8:00000000 r7:eaace010 r6:eb2e331c r5:eb2e3330 r4:eb2e3000
+[  138.675047] [<c0554470>] (__input_unregister_device) from [<c05567ec>] (input_unregister_device+0x54/0x74)
+[  138.684696]  r7:eaace010 r6:ea4e2000 r5:00000000 r4:eb2e3000
+[  138.690355] [<c0556798>] (input_unregister_device) from [<c05bbef0>] (uvc_status_cleanup+0x38/0x3c)
+[  138.699396]  r5:00000000 r4:ea4e2000
+[  138.702973] [<c05bbeb8>] (uvc_status_cleanup) from [<c05b1a90>] (uvc_delete+0x1c/0x124)
+[  138.710973]  r5:00000000 r4:ea4e2260
+[  138.714548] [<c05b1a74>] (uvc_delete) from [<c05b1bc8>] (uvc_release+0x30/0x34)
+[  138.721855]  r9:00000008 r8:00000000 r7:eaace010 r6:c0bc26c8 r5:00000000 r4:ea4e2260
+[  138.729597] [<c05b1b98>] (uvc_release) from [<c057cb00>] (v4l2_device_release+0xcc/0xec)
+[  138.737682]  r5:00000000 r4:eaace100
+[  138.741256] [<c057ca34>] (v4l2_device_release) from [<c046d1a0>] (device_release+0x64/0x98)
+[  138.749604]  r9:00000008 r8:eb150710 r7:ea115880 r6:ea590900 r5:eaace100 r4:eaace108
+[  138.757345] [<c046d13c>] (device_release) from [<c0793b18>] (kobject_put+0xa0/0xc0)
+[  138.764997]  r7:ea115880 r6:c0b5074c r5:ea5089c0 r4:eaace108
+[  138.770655] [<c0793a78>] (kobject_put) from [<c046e09c>] (put_device+0x1c/0x20)
+[  138.777959]  r6:00000000 r5:eaace010 r4:00000000
+[  138.782575] [<c046e080>] (put_device) from [<c057cc00>] (v4l2_release+0x68/0x78)
+[  138.789970] [<c057cb98>] (v4l2_release) from [<c023d8a4>] (__fput+0xe8/0x1a4)
+[  138.797100]  r5:ea73f4f8 r4:ea4c0180
+[  138.800674] [<c023d7bc>] (__fput) from [<c023d9bc>] (____fput+0x10/0x14)
+[  138.807373]  r10:ea63fed8 r9:ea63fe3c r8:00000001 r7:ea4b403c r6:c0b83e74 r5:ea5cc840
+[  138.815197]  r4:00000000
+[  138.817731] [<c023d9ac>] (____fput) from [<c013e448>] (task_work_run+0xb4/0xc8)
+[  138.825037] [<c013e394>] (task_work_run) from [<c01259d4>] (do_exit+0x4d8/0x9dc)
+[  138.832429]  r7:ea4b403c r6:00000444 r5:ea4b4000 r4:ea5cc840
+[  138.838086] [<c01254fc>] (do_exit) from [<c0125f68>] (do_group_exit+0x54/0xd8)
+[  138.845303]  r7:ea63e000
+[  138.847835] [<c0125f14>] (do_group_exit) from [<c0131178>] (get_signal+0x558/0x610)
+[  138.855487]  r7:ea63e000 r6:ea63fec4 r5:eab7bf84 r4:00000009
+[  138.861144] [<c0130c20>] (get_signal) from [<c010b6c0>] (do_signal+0xa0/0x480)
+[  138.868364]  r10:000000a8 r9:b6d61d22 r8:fffffdfc r7:b6d61d20 r6:ea63ffb0 r5:c0b04c08
+[  138.876188]  r4:ffffffff
+[  138.878720] [<c010b620>] (do_signal) from [<c010bc14>] (do_work_pending+0x58/0xdc)
+[  138.886286]  r10:000000a8 r9:ea63e000 r8:c0101204 r7:000000a8 r6:ea63e010 r5:ea63ffb0
+[  138.894111]  r4:c0101204
+[  138.896643] [<c010bbbc>] (do_work_pending) from [<c010106c>] (slow_work_pending+0xc/0x20)
+[  138.904815] Exception stack(0xea63ffb0 to 0xea63fff8)
+[  138.909864] ffa0:                                     b5600478 00000001 ffffffff ffffffff
+[  138.918039] ffc0: 001605c8 00000001 b5600478 000000a8 b6e1a2a5 00000001 00000001 beb18190
+[  138.926213] ffe0: 00000000 b5fb7de8 b6d61d1b b6d61d20 80070030 b5600478
+[  138.932823]  r7:000000a8 r6:b5600478 r5:00000001 r4:001605c8
+[  138.938496] ---[ end trace 716be8ee8dc0ef05 ]---
+[  138.943112] ------------[ cut here ]------------
+[  138.947745] WARNING: CPU: 0 PID: 1013 at fs/sysfs/group.c:255 sysfs_remove_group+0x58/0x9c
+[  138.956013] sysfs group 'capabilities' not found for kobject 'input1'
+[  138.962451] CPU: 0 PID: 1013 Comm: gmain Tainted: G        W         4.19.0-rc7 #785
+[  138.970189] Hardware name: Generic R-Car Gen2 (Flattened Device Tree)
+[  138.976624] Backtrace: 
+[  138.979074] [<c010c418>] (dump_backtrace) from [<c010c688>] (show_stack+0x18/0x1c)
+[  138.986640]  r7:c0977d10 r6:c02a6ec4 r5:600d0013 r4:00000000
+[  138.992298] [<c010c670>] (show_stack) from [<c078f460>] (dump_stack+0x84/0xa4)
+[  138.999521] [<c078f3dc>] (dump_stack) from [<c0121020>] (__warn+0xdc/0x10c)
+[  139.006478]  r5:00000000 r4:ea63fbd4
+[  139.010054] [<c0120f44>] (__warn) from [<c012109c>] (warn_slowpath_fmt+0x4c/0x6c)
+[  139.017534]  r9:eb2e31e8 r8:00000000 r7:c08a1f6c r6:eb2e3198 r5:c08a1ff8 r4:c0b04c08
+[  139.025276] [<c0121054>] (warn_slowpath_fmt) from [<c02a6ec4>] (sysfs_remove_group+0x58/0x9c)
+[  139.033796]  r3:c099c8e4 r2:c0977daf
+[  139.037367]  r4:00000000
+[  139.039900] [<c02a6e6c>] (sysfs_remove_group) from [<c02a6fa0>] (sysfs_remove_groups+0x30/0x38)
+[  139.048594]  r6:c0b5df44 r5:eb2e3198 r4:c0b5dfa8
+[  139.053211] [<c02a6f70>] (sysfs_remove_groups) from [<c046dcf0>] (device_remove_attrs+0x44/0x60)
+[  139.061991]  r5:eb2e3198 r4:eb2e3190
+[  139.065566] [<c046dcac>] (device_remove_attrs) from [<c04701fc>] (device_del+0x150/0x2c0)
+[  139.073739]  r7:eaa1d820 r6:c0b04c08 r5:eb0d3038 r4:eb2e3190
+[  139.079397] [<c04700ac>] (device_del) from [<c05545a4>] (__input_unregister_device+0x134/0x148)
+[  139.088092]  r9:00000008 r8:00000000 r7:eaace010 r6:eb2e331c r5:eb2e3330 r4:eb2e3000
+[  139.095834] [<c0554470>] (__input_unregister_device) from [<c05567ec>] (input_unregister_device+0x54/0x74)
+[  139.105483]  r7:eaace010 r6:ea4e2000 r5:00000000 r4:eb2e3000
+[  139.111143] [<c0556798>] (input_unregister_device) from [<c05bbef0>] (uvc_status_cleanup+0x38/0x3c)
+[  139.120184]  r5:00000000 r4:ea4e2000
+[  139.123760] [<c05bbeb8>] (uvc_status_cleanup) from [<c05b1a90>] (uvc_delete+0x1c/0x124)
+[  139.131759]  r5:00000000 r4:ea4e2260
+[  139.135335] [<c05b1a74>] (uvc_delete) from [<c05b1bc8>] (uvc_release+0x30/0x34)
+[  139.142641]  r9:00000008 r8:00000000 r7:eaace010 r6:c0bc26c8 r5:00000000 r4:ea4e2260
+[  139.150383] [<c05b1b98>] (uvc_release) from [<c057cb00>] (v4l2_device_release+0xcc/0xec)
+[  139.158469]  r5:00000000 r4:eaace100
+[  139.162043] [<c057ca34>] (v4l2_device_release) from [<c046d1a0>] (device_release+0x64/0x98)
+[  139.170390]  r9:00000008 r8:eb150710 r7:ea115880 r6:ea590900 r5:eaace100 r4:eaace108
+[  139.178131] [<c046d13c>] (device_release) from [<c0793b18>] (kobject_put+0xa0/0xc0)
+[  139.185784]  r7:ea115880 r6:c0b5074c r5:ea5089c0 r4:eaace108
+[  139.191442] [<c0793a78>] (kobject_put) from [<c046e09c>] (put_device+0x1c/0x20)
+[  139.198746]  r6:00000000 r5:eaace010 r4:00000000
+[  139.203361] [<c046e080>] (put_device) from [<c057cc00>] (v4l2_release+0x68/0x78)
+[  139.210755] [<c057cb98>] (v4l2_release) from [<c023d8a4>] (__fput+0xe8/0x1a4)
+[  139.217886]  r5:ea73f4f8 r4:ea4c0180
+[  139.221460] [<c023d7bc>] (__fput) from [<c023d9bc>] (____fput+0x10/0x14)
+[  139.228159]  r10:ea63fed8 r9:ea63fe3c r8:00000001 r7:ea4b403c r6:c0b83e74 r5:ea5cc840
+[  139.235983]  r4:00000000
+[  139.238516] [<c023d9ac>] (____fput) from [<c013e448>] (task_work_run+0xb4/0xc8)
+[  139.245822] [<c013e394>] (task_work_run) from [<c01259d4>] (do_exit+0x4d8/0x9dc)
+[  139.253215]  r7:ea4b403c r6:00000444 r5:ea4b4000 r4:ea5cc840
+[  139.258872] [<c01254fc>] (do_exit) from [<c0125f68>] (do_group_exit+0x54/0xd8)
+[  139.266089]  r7:ea63e000
+[  139.268621] [<c0125f14>] (do_group_exit) from [<c0131178>] (get_signal+0x558/0x610)
+[  139.276273]  r7:ea63e000 r6:ea63fec4 r5:eab7bf84 r4:00000009
+[  139.281930] [<c0130c20>] (get_signal) from [<c010b6c0>] (do_signal+0xa0/0x480)
+[  139.289149]  r10:000000a8 r9:b6d61d22 r8:fffffdfc r7:b6d61d20 r6:ea63ffb0 r5:c0b04c08
+[  139.296974]  r4:ffffffff
+[  139.299506] [<c010b620>] (do_signal) from [<c010bc14>] (do_work_pending+0x58/0xdc)
+[  139.307072]  r10:000000a8 r9:ea63e000 r8:c0101204 r7:000000a8 r6:ea63e010 r5:ea63ffb0
+[  139.314897]  r4:c0101204
+[  139.317429] [<c010bbbc>] (do_work_pending) from [<c010106c>] (slow_work_pending+0xc/0x20)
+[  139.325601] Exception stack(0xea63ffb0 to 0xea63fff8)
+[  139.330650] ffa0:                                     b5600478 00000001 ffffffff ffffffff
+[  139.338825] ffc0: 001605c8 00000001 b5600478 000000a8 b6e1a2a5 00000001 00000001 beb18190
+[  139.346998] ffe0: 00000000 b5fb7de8 b6d61d1b b6d61d20 80070030 b5600478
+[  139.353609]  r7:000000a8 r6:b5600478 r5:00000001 r4:001605c8
+[  139.359296] ---[ end trace 716be8ee8dc0ef06 ]---
+[  139.364031] ------------[ cut here ]------------
+[  139.368686] WARNING: CPU: 0 PID: 1013 at fs/sysfs/group.c:255 sysfs_remove_group+0x58/0x9c
+[  139.376959] sysfs group 'power' not found for kobject 'media3'
+[  139.382792] CPU: 0 PID: 1013 Comm: gmain Tainted: G        W         4.19.0-rc7 #785
+[  139.390531] Hardware name: Generic R-Car Gen2 (Flattened Device Tree)
+[  139.396967] Backtrace: 
+[  139.399421] [<c010c418>] (dump_backtrace) from [<c010c688>] (show_stack+0x18/0x1c)
+[  139.406987]  r7:c0977d10 r6:c02a6ec4 r5:600d0013 r4:00000000
+[  139.412649] [<c010c670>] (show_stack) from [<c078f460>] (dump_stack+0x84/0xa4)
+[  139.419874] [<c078f3dc>] (dump_stack) from [<c0121020>] (__warn+0xdc/0x10c)
+[  139.426831]  r5:00000000 r4:ea63fbdc
+[  139.430407] [<c0120f44>] (__warn) from [<c012109c>] (warn_slowpath_fmt+0x4c/0x6c)
+[  139.437886]  r9:00000008 r8:ea4e2114 r7:eaa1d820 r6:ea4bce10 r5:c0891a54 r4:c0b04c08
+[  139.445629] [<c0121054>] (warn_slowpath_fmt) from [<c02a6ec4>] (sysfs_remove_group+0x58/0x9c)
+[  139.454148]  r3:c0891acc r2:c0977daf
+[  139.457719]  r4:00000000
+[  139.460254] [<c02a6e6c>] (sysfs_remove_group) from [<c047ab9c>] (dpm_sysfs_remove+0x4c/0x54)
+[  139.468688]  r6:ea4bce08 r5:c0891a38 r4:ea4bce10
+[  139.473307] [<c047ab50>] (dpm_sysfs_remove) from [<c04700f8>] (device_del+0x4c/0x2c0)
+[  139.481133]  r7:eaa1d820 r6:c0b04c08 r5:ea4bcfa8 r4:ea4bce08
+[  139.486797] [<c04700ac>] (device_del) from [<c02407fc>] (cdev_device_del+0x1c/0x34)
+[  139.494450]  r9:00000008 r8:ea4e2114 r7:ea4e210c r6:c0b5feb8 r5:ea4bcfa8 r4:ea4bce08
+[  139.502197] [<c02407e0>] (cdev_device_del) from [<c057a874>] (media_devnode_unregister+0x2c/0x4c)
+[  139.511064]  r5:ea4bce08 r4:ea4bce00
+[  139.514640] [<c057a848>] (media_devnode_unregister) from [<c057a2f4>] (media_device_unregister+0x11c/0x12c)
+[  139.524376]  r7:ea4e210c r6:ea4e2134 r5:ea4e210c r4:ea4e2058
+[  139.530038] [<c057a1d8>] (media_device_unregister) from [<c05b1ae0>] (uvc_delete+0x6c/0x124)
+[  139.538473]  r9:00000008 r8:00000000 r7:eaace010 r6:ea4e2000 r5:ea4e2058 r4:ea4e2260
+[  139.546216] [<c05b1a74>] (uvc_delete) from [<c05b1bc8>] (uvc_release+0x30/0x34)
+[  139.553522]  r9:00000008 r8:00000000 r7:eaace010 r6:c0bc26c8 r5:00000000 r4:ea4e2260
+[  139.561264] [<c05b1b98>] (uvc_release) from [<c057cb00>] (v4l2_device_release+0xcc/0xec)
+[  139.569350]  r5:00000000 r4:eaace100
+[  139.572924] [<c057ca34>] (v4l2_device_release) from [<c046d1a0>] (device_release+0x64/0x98)
+[  139.581272]  r9:00000008 r8:eb150710 r7:ea115880 r6:ea590900 r5:eaace100 r4:eaace108
+[  139.589014] [<c046d13c>] (device_release) from [<c0793b18>] (kobject_put+0xa0/0xc0)
+[  139.596666]  r7:ea115880 r6:c0b5074c r5:ea5089c0 r4:eaace108
+[  139.602324] [<c0793a78>] (kobject_put) from [<c046e09c>] (put_device+0x1c/0x20)
+[  139.609628]  r6:00000000 r5:eaace010 r4:00000000
+[  139.614244] [<c046e080>] (put_device) from [<c057cc00>] (v4l2_release+0x68/0x78)
+[  139.621638] [<c057cb98>] (v4l2_release) from [<c023d8a4>] (__fput+0xe8/0x1a4)
+[  139.628769]  r5:ea73f4f8 r4:ea4c0180
+[  139.632343] [<c023d7bc>] (__fput) from [<c023d9bc>] (____fput+0x10/0x14)
+[  139.639041]  r10:ea63fed8 r9:ea63fe3c r8:00000001 r7:ea4b403c r6:c0b83e74 r5:ea5cc840
+[  139.646865]  r4:00000000
+[  139.649399] [<c023d9ac>] (____fput) from [<c013e448>] (task_work_run+0xb4/0xc8)
+[  139.656707] [<c013e394>] (task_work_run) from [<c01259d4>] (do_exit+0x4d8/0x9dc)
+[  139.664098]  r7:ea4b403c r6:00000444 r5:ea4b4000 r4:ea5cc840
+[  139.669755] [<c01254fc>] (do_exit) from [<c0125f68>] (do_group_exit+0x54/0xd8)
+[  139.676973]  r7:ea63e000
+[  139.679505] [<c0125f14>] (do_group_exit) from [<c0131178>] (get_signal+0x558/0x610)
+[  139.687157]  r7:ea63e000 r6:ea63fec4 r5:eab7bf84 r4:00000009
+[  139.692815] [<c0130c20>] (get_signal) from [<c010b6c0>] (do_signal+0xa0/0x480)
+[  139.700034]  r10:000000a8 r9:b6d61d22 r8:fffffdfc r7:b6d61d20 r6:ea63ffb0 r5:c0b04c08
+[  139.707858]  r4:ffffffff
+[  139.710390] [<c010b620>] (do_signal) from [<c010bc14>] (do_work_pending+0x58/0xdc)
+[  139.717957]  r10:000000a8 r9:ea63e000 r8:c0101204 r7:000000a8 r6:ea63e010 r5:ea63ffb0
+[  139.725781]  r4:c0101204
+[  139.728314] [<c010bbbc>] (do_work_pending) from [<c010106c>] (slow_work_pending+0xc/0x20)
+[  139.736486] Exception stack(0xea63ffb0 to 0xea63fff8)
+[  139.741535] ffa0:                                     b5600478 00000001 ffffffff ffffffff
+[  139.749710] ffc0: 001605c8 00000001 b5600478 000000a8 b6e1a2a5 00000001 00000001 beb18190
+[  139.757884] ffe0: 00000000 b5fb7de8 b6d61d1b b6d61d20 80070030 b5600478
+[  139.764495]  r7:000000a8 r6:b5600478 r5:00000001 r4:001605c8
+[  139.770168] ---[ end trace 716be8ee8dc0ef07 ]---
+root@linaro-nano:~# 
+
