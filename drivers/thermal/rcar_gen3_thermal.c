@@ -83,6 +83,7 @@ struct rcar_gen3_thermal_priv {
 	unsigned int num_tscs;
 	spinlock_t lock; /* Protect interrupts on and off */
 	void (*thermal_init)(struct rcar_gen3_thermal_tsc *tsc);
+	struct thermal_zone_device *zone;
 };
 
 static inline u32 rcar_gen3_thermal_read(struct rcar_gen3_thermal_tsc *tsc,
@@ -379,37 +380,169 @@ static int rcar_gen3_thermal_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int rcar_gen3_thermal_get_temp_h(struct rcar_gen3_thermal_tsc* tsc)
+{
+	int temp;
+
+	int Tj_T = (1509 - 435)*157/(2631 - 435) -41;
+	//printk("file %s func %s line %d Tj_T %d",__FILE__, __FUNCTION__, __LINE__,  Tj_T);
+
+	int THCODE1, THCODE2, THCODE3, PLAT1, PLAT2, PLAT3;
+
+	THCODE1 = 3397; THCODE2 = 2800; THCODE3 = 2221; PLAT1 = 2631; PLAT2 = 1509; PLAT3 = 435;
+	u32 temp_code;
+	int k;
+
+	temp_code = rcar_gen3_thermal_read (tsc, REG_GEN3_TEMP);
+
+	//printk("file %s func %s line %d temp_code %x temp_code_11 %d",__FILE__, __FUNCTION__, __LINE__,  temp_code, temp_code);
+
+	if(temp_code < THCODE2)
+	{
+		temp = 157 * (PLAT3 - PLAT2)*  (THCODE3 - temp_code) / ((PLAT3 - PLAT1)* (THCODE3 - THCODE2)) - 41;
+	}
+	else
+	{
+		temp = 157 * (PLAT1 - PLAT2)*  (THCODE1 - temp_code) / ((PLAT1 - PLAT3)* (THCODE2 - THCODE1)) + 116;
+	}
+
+	//printk("file %s func %s line %d temp_code %d temp %d",__FILE__, __FUNCTION__, __LINE__, temp_code, temp);
+
+	return temp;
+}
+
+static int rcar_gen3_thermal_init_h(struct rcar_gen3_thermal_tsc* tsc)
+{
+
+	/*
+		 * Start -> setting in nomal mode -> normal mode
+		 *
+		 */
+		/*
+		 * Setting in normal mode
+		 */
+
+		//Write B'0 to PONW in THCTR register
+		u32 reg_thctr = rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR);
+		rcar_gen3_thermal_write(tsc, REG_GEN3_THCTR, reg_thctr & (~BIT(6)));
+		printk("file %s func %s line %d reg_thctr %x",__FILE__, __FUNCTION__, __LINE__,  rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR));
+
+		//Wait 1 [ms]
+		usleep_range(1000, 2000);
+		//Set IRQCTL register
+		rcar_gen3_thermal_write(tsc, REG_GEN3_IRQCTL, 0);
+		//Set IRQMSK register
+		rcar_gen3_thermal_write(tsc, REG_GEN3_IRQMSK, BIT(3));
+		printk("file %s func %s line %d reg_IRQMSK %x",__FILE__, __FUNCTION__, __LINE__,  rcar_gen3_thermal_read(tsc,REG_GEN3_IRQMSK));
+
+		//Set IRQTEMP# register
+		//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP1, 0);
+		//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP2, 0);
+		//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP3, 0);
+
+		//Set IRQEN register
+		rcar_gen3_thermal_write(tsc, REG_GEN3_IRQEN, BIT(3));
+
+		//Write B'1 to THSST in THCTR register
+		rcar_gen3_thermal_write(tsc, REG_GEN3_THCTR, rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR) | BIT(0));
+		printk("file %s func %s line %d reg_thctr %x",__FILE__, __FUNCTION__, __LINE__,  rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR));
+
+		//*******************************************//
+		usleep_range(1000, 2000);
+
+}
+
+static irqreturn_t rcar_thermal_irq(int irq, void *data)
+{
+	return IRQ_HANDLED;
+}
+
+static int rcar_thermal_of_get_temp(void *devdata, int *temp)
+{
+	struct rcar_gen3_thermal_tsc *tsc = devdata;
+
+	//printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+	*temp = rcar_gen3_thermal_get_temp_h(tsc);
+	return 0;
+}
+static const struct thermal_zone_of_device_ops rcar_thermal_zone_of_ops = {
+	.get_temp	= rcar_thermal_of_get_temp,
+};
+
 static int rcar_gen3_thermal_probe(struct platform_device *pdev)
 {
-	struct rcar_gen3_thermal_priv *priv;
+	//struct rcar_gen3_thermal_priv *priv;
 	struct device *dev = &pdev->dev;
 	struct resource *res;
 	struct thermal_zone_device *zone;
-	struct rcar_gen3_thermal_tsc* tsc;
-	int ret, irq, i;
+	struct rcar_gen3_thermal_tsc *tsc;
+	int ret, i;
 	char *irqname;
-
-	tsc = devm_kzalloc(dev, sizeof(*tsc), GFP_KERNEL);
-		if (!tsc)
-			return -ENOMEM;
-
-
-	platform_set_drvdata(pdev, tsc);
 
 	pm_runtime_enable(dev);
 	pm_runtime_get_sync(dev);
+
+
+
+	platform_set_drvdata(pdev, tsc);
 
 	printk("file %s func %s line %d pdev->name %s",__FILE__, __FUNCTION__, __LINE__,  pdev->name);
 
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM,
 							    0);
+	if(!res)
+	{
+		printk("file %s func %s line %d",__FILE__, __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	tsc = devm_kzalloc(dev, sizeof(*tsc), GFP_KERNEL);
+	if (!tsc)
+		return -ENOMEM;
+
+
 	tsc->base = devm_ioremap_resource(dev, res);
 
 	if (IS_ERR(tsc->base))
+	{
+		printk("file %s func %s line %d",__FILE__, __FUNCTION__, __LINE__);
 		return PTR_ERR(tsc->base);
+	}
 
-	printk("file %s func %s line %d tsc->base %x",__FILE__, __FUNCTION__, __LINE__,  tsc->base);
+	//tsc1 = devm_kzalloc(dev, sizeof(*tsc1), GFP_KERNEL);
+	//if (!tsc1)
+	//	return -ENOMEM;
+	//res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	//tsc1->base = devm_ioremap_resource(dev, res1);
+
+
+	//for(i=0; i<2; i++)
+	//{
+	//	irq = platform_get_resource(pdev, IORESOURCE_IRQ, i);
+	//	ret = devm_request_irq(dev, irq->start, rcar_thermal_irq,
+	//			       IRQF_SHARED, dev_name(dev), tsc);
+	//}
+
+	//rcar_gen3_thermal_init_h(tsc);
+
+	zone = devm_thermal_zone_of_sensor_register(dev, 0, tsc,
+						    &rcar_thermal_zone_of_ops);
+
+	if (IS_ERR(zone)) {
+		dev_err(dev, "Can't register thermal zone\n");
+		printk("file %s func%s line %d", __FILE__, __FUNCTION__, __LINE__);
+		ret = PTR_ERR(zone);
+	}
+	tsc->zone = zone;
+
+
+	//priv->tscs[0] = tsc;
+	//priv->zone = devm_thermal_zone_of_sensor_register(
+	//			dev, i, priv,
+	//			&rcar_thermal_zone_of_ops);
+
+	//printk("file %s func %s line %d tsc->base %x",__FILE__, __FUNCTION__, __LINE__,  tsc->base);
 
 
 	//void __iomem* io = ioremap(0xe61a0000, 4);
@@ -421,72 +554,15 @@ static int rcar_gen3_thermal_probe(struct platform_device *pdev)
 	//pr_info("Hoan _test io2 %x\n", io2);
 	//pr_info("Hoan _test io2 %x\n", ioread32(io2));
 
-
-	/*
-	 * Start -> setting in nomal mode -> normal mode
-	 *
-	 */
-	/*
-	 * Setting in normal mode
-	 */
-
-	//Write B'0 to PONW in THCTR register
-	u32 reg_thctr = rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR);
-	rcar_gen3_thermal_write(tsc, REG_GEN3_THCTR, reg_thctr & (~BIT(6)));
-	printk("file %s func %s line %d reg_thctr %x",__FILE__, __FUNCTION__, __LINE__,  rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR));
-
-	//Wait 1 [ms]
-	usleep_range(1000, 2000);
-	//Set IRQCTL register
-	rcar_gen3_thermal_write(tsc, REG_GEN3_IRQCTL, 0);
-	//Set IRQMSK register
-	rcar_gen3_thermal_write(tsc, REG_GEN3_IRQMSK, BIT(3));
-	printk("file %s func %s line %d reg_IRQMSK %x",__FILE__, __FUNCTION__, __LINE__,  rcar_gen3_thermal_read(tsc,REG_GEN3_IRQMSK));
-
-	//Set IRQTEMP# register
-	//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP1, 0);
-	//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP2, 0);
-	//rcar_gen3_thermal_write(tsc, REG_GEN3_IRQTEMP3, 0);
-
-	//Set IRQEN register
-	rcar_gen3_thermal_write(tsc, REG_GEN3_IRQEN, BIT(3));
-
-	//Write B'1 to THSST in THCTR register
-	rcar_gen3_thermal_write(tsc, REG_GEN3_THCTR, rcar_gen3_thermal_read(tsc,REG_GEN3_THCTR) | BIT(0));
-
-	//*******************************************//
+	//rcar_gen3_thermal_init_h(tsc);
+	//rcar_gen3_thermal_init_h(tsc1);
+	//printk("file %s func %s line %d tsc->base %x tsc1->base %x REG_GEN3_THCTR=%x REG_GEN3_THCTR1=%x",__FILE__, __FUNCTION__, __LINE__,  tsc->base, tsc1->base,
+	//		rcar_gen3_thermal_read(tsc, REG_GEN3_THCTR), rcar_gen3_thermal_read(tsc1, REG_GEN3_THCTR));
 
 
-	int Tj_T = (1509 - 435)*157/(2631 - 435) -41;
-	printk("file %s func %s line %d Tj_T %d",__FILE__, __FUNCTION__, __LINE__,  Tj_T);
-
-	int THCODE1, THCODE2, THCODE3, PLAT1, PLAT2, PLAT3;
-
-	THCODE1 = 3397; THCODE2 = 2800; THCODE3 = 2221; PLAT1 = 2631; PLAT2 = 1509; PLAT3 = 435;
-	u32 temp_code;
-	int k;
-
-	for (k= 0; k< 30; k++)
-	{
-
-	temp_code = rcar_gen3_thermal_read (tsc, REG_GEN3_TEMP);
-
-	//printk("file %s func %s line %d temp_code %x temp_code_11 %d",__FILE__, __FUNCTION__, __LINE__,  temp_code, temp_code);
-
-	int temp;
-	if(temp_code < THCODE2)
-	{
-		temp = 157 * (PLAT3 - PLAT2)*  (THCODE3 - temp_code) / ((PLAT3 - PLAT1)* (THCODE3 - THCODE2)) - 41;
-	}
-	else
-	{
-		temp = 157 * (PLAT1 - PLAT2)*  (THCODE1 - temp_code) / ((PLAT1 - PLAT3)* (THCODE2 - THCODE1)) + 116;
-	}
-
-	printk("file %s func %s line %d temp_code %d temp %d",__FILE__, __FUNCTION__, __LINE__, temp_code, temp);
-	usleep_range(1000000, 2000000);
-
-	}
+	//rcar_gen3_thermal_get_temp_h(tsc);
+	//rcar_gen3_thermal_get_temp_h(tsc1);
+	return 0;
 
 	return ret;
 }

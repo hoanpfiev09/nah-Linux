@@ -448,8 +448,8 @@
 
 		tsc: Hoan@Thien-ha {
 			compatible = "renesas,r8a7795-thermal";
-			reg = <0 0xe6198000 0 0x100>,
-			      <0 0xe61a0000 0 0x100>,
+			reg = <0 0xe61a0000 0 0x100>,
+			      <0 0xe6198000 0 0x100>,
 			      <0 0xe61a8000 0 0x100>;
 			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
@@ -2821,10 +2821,6 @@
 			};
 		};
 
-		prr: chipid@fff00044 {
-			compatible = "renesas,prr";
-			reg = <0 0xfff00044 0 4>;
-		};
 	};
 
 	thermal-zones {
@@ -2854,57 +2850,6 @@
 			};
 		};
 
-		sensor_thermal2: sensor-thermal2 {
-			polling-delay-passive = <250>;
-			polling-delay = <1000>;
-			thermal-sensors = <&tsc 1>;
-
-			trips {
-				sensor2_passive: sensor2-passive {
-					temperature = <95000>;
-					hysteresis = <1000>;
-					type = "passive";
-				};
-				sensor2_crit: sensor2-crit {
-					temperature = <120000>;
-					hysteresis = <1000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map0 {
-					trip = <&sensor2_passive>;
-					cooling-device = <&a57_0 4 4>;
-				};
-			};
-		};
-
-		sensor_thermal3: sensor-thermal3 {
-			polling-delay-passive = <250>;
-			polling-delay = <1000>;
-			thermal-sensors = <&tsc 2>;
-
-			trips {
-				sensor3_passive: sensor3-passive {
-					temperature = <95000>;
-					hysteresis = <1000>;
-					type = "passive";
-				};
-				sensor3_crit: sensor3-crit {
-					temperature = <120000>;
-					hysteresis = <1000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map0 {
-					trip = <&sensor3_passive>;
-					cooling-device = <&a57_0 4 4>;
-				};
-			};
-		};
 	};
 
 	timer {
