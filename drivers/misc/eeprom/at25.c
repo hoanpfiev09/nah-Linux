@@ -75,6 +75,7 @@ static int at25_ee_read(void *priv, unsigned int offset,
 	struct spi_message	m;
 	u8			instr;
 
+	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if (unlikely(offset >= at25->chip.byte_len))
 		return -EINVAL;
 	if ((offset + count) > at25->chip.byte_len)
@@ -138,6 +139,7 @@ static int at25_ee_write(void *priv, unsigned int off, void *val, size_t count)
 	unsigned		buf_size;
 	u8			*bounce;
 
+	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if (unlikely(off >= at25->chip.byte_len))
 		return -EFBIG;
 	if ((off + count) > at25->chip.byte_len)
@@ -208,21 +210,21 @@ static int at25_ee_write(void *priv, unsigned int off, void *val, size_t count)
 		 */
 
 		/* Wait for non-busy status */
-		timeout = jiffies + msecs_to_jiffies(EE_TIMEOUT);
-		retries = 0;
-		do {
-
-			sr = spi_w8r8(at25->spi, AT25_RDSR);
-			if (sr < 0 || (sr & AT25_SR_nRDY)) {
-				dev_dbg(&at25->spi->dev,
-					"rdsr --> %d (%02x)\n", sr, sr);
-				/* at HZ=100, this is sloooow */
-				msleep(1);
-				continue;
-			}
-			if (!(sr & AT25_SR_nRDY))
-				break;
-		} while (retries++ < 3 || time_before_eq(jiffies, timeout));
+//		timeout = jiffies + msecs_to_jiffies(EE_TIMEOUT);
+//		retries = 0;
+//		do {
+//
+//			sr = spi_w8r8(at25->spi, AT25_RDSR);
+//			if (sr < 0 || (sr & AT25_SR_nRDY)) {
+//				dev_dbg(&at25->spi->dev,
+//					"rdsr --> %d (%02x)\n", sr, sr);
+//				/* at HZ=100, this is sloooow */
+//				msleep(1);
+//				continue;
+//			}
+//			if (!(sr & AT25_SR_nRDY))
+//				break;
+//		} while (retries++ < 3 || time_before_eq(jiffies, timeout));
 
 		if ((sr < 0) || (sr & AT25_SR_nRDY)) {
 			dev_err(&at25->spi->dev,
@@ -312,6 +314,8 @@ static int at25_probe(struct spi_device *spi)
 	int			sr;
 	int			addrlen;
 
+
+	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	/* Chip description */
 	if (!spi->dev.platform_data) {
 		err = at25_fw_to_chip(&spi->dev, &chip);
