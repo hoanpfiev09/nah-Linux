@@ -1143,52 +1143,6 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 		words -= n;
 	}
 
-
-	if(h_pm_test >= 10)
-	{
-		u32 reg_val;
-
-		/*Config TMDR1*/
-		sh_msiof_write(p, TMDR1, 0xe2000005);
-
-		/*Config RMDR1*/
-		sh_msiof_write(p, RMDR1, 0x22000000);
-
-		/*Config CTR*/
-		sh_msiof_write(p, CTR  , 0xac000000);
-
-		/*Config TSCR*/
-		sh_msiof_write(p, TSCR , 0x1004);
-
-		/*Config FCTR*/
-		sh_msiof_write(p, FCTR , 0x00);
-
-		/*Config TMDR2*/
-		sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
-
-		/*Config IER We are enable only TEOFE and REOFE*/
-		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
-		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
-		sh_msiof_write(p, IER , 0x00800080);
-
-		/*Config TFDR*/
-		sh_msiof_write(p, TFDR , 0xef000000);
-
-		/*Config CTR*/
-		sh_msiof_write(p, CTR , 0xac00c200);
-
-		/*Idle for transmit end and update STR*/
-		reg_val = sh_msiof_read(p, STR);
-		while(!(reg_val & STR_TEOF)){;}
-
-		sh_msiof_write(p, STR , reg_val);
-
-		/*Config CTR for stop*/
-
-		sh_msiof_write(p, CTR , 0x03);
-
-	}
-
 	return 0;
 }
 
@@ -1454,7 +1408,51 @@ static void sh_msiof_release_dma(struct sh_msiof_spi_priv *p)
 
 static int fops_incomplete_transfer_set(void *data, u64 addr)
 {
-	struct sh_msiof_spi_priv *priv = data;
+	h_debug;
+	struct sh_msiof_spi_priv *p = data;
+
+		u32 reg_val;
+
+		/*Config TMDR1 0xe2000005*/
+		sh_msiof_write(p, TMDR1, 0xe6000005);
+
+		/*Config RMDR1*/
+		sh_msiof_write(p, RMDR1, 0x22000000);
+
+		/*Config CTR*/
+		sh_msiof_write(p, CTR  , 0xac000000);
+
+		/*Config TSCR*/
+		sh_msiof_write(p, TSCR , 0x1004);
+
+		/*Config FCTR*/
+		sh_msiof_write(p, FCTR , 0x00);
+
+		/*Config TMDR2*/
+		sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
+
+		/*Config IER We are enable only TEOFE and REOFE 0x00800080*/
+		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
+		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
+		sh_msiof_write(p, IER , 0);
+
+		/*Config TFDR*/
+		sh_msiof_write(p, TFDR , 0xef000000);
+
+		/*Config CTR*/
+		sh_msiof_write(p, CTR , 0xac00c200);
+
+		/*Idle for transmit end and update STR*/
+		reg_val = sh_msiof_read(p, STR);
+		//while(!(reg_val & STR_TEOF)){;}
+		printk("file %s func %s line %d reg_val %x", __FILE__, __FUNCTION__, __LINE__,reg_val);
+		mdelay(1000);
+
+		sh_msiof_write(p, STR , reg_val);
+
+		/*Config CTR for stop*/
+
+		sh_msiof_write(p, CTR , 0x03);
 
 	h_debug;
 
