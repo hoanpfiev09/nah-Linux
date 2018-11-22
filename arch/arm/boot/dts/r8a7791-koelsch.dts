@@ -56,8 +56,8 @@
 	};
 
 	chosen {
-		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
-		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttySC0,38400 ignore_loglevel consoleblank=0 rw root=/dev/nfs nfsroot=192.168.1.8:/tftpboot/rootfs ip=192.168.1.28";
+		stdout-path = "serial0:38400n8";
 	};
 
 	memory@40000000 {
