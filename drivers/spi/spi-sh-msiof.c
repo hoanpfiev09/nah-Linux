@@ -11,6 +11,7 @@
 #include <linux/clk.h>
 #include <linux/completion.h>
 #include <linux/delay.h>
+#include <asm/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/dmaengine.h>
 #include <linux/err.h>
@@ -30,6 +31,13 @@
 #include <linux/spi/spi.h>
 
 #include <asm/unaligned.h>
+#include <linux/debugfs.h>
+#include <linux/gpio/consumer.h>
+
+static struct dentry *spi_gpio_debug_dir;
+//static inline void spi_gpio_fault_injector_init(struct platform_device *pdev) {}
+
+#define h_debug; printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 
 struct sh_msiof_chipdata {
 	u16 tx_fifo_size;
@@ -57,6 +65,8 @@ struct sh_msiof_spi_priv {
 	bool native_cs_inited;
 	bool native_cs_high;
 	bool slave_aborted;
+
+	struct dentry *debug_dir;
 };
 
 #define MAX_SS	3	/* Maximum number of native chip selects */
@@ -190,7 +200,9 @@ struct sh_msiof_spi_priv {
 
 static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
 {
+	printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
 	switch (reg_offs) {
+
 	case TSCR:
 	case RSCR:
 		return ioread16(p->mapbase + reg_offs);
@@ -202,7 +214,9 @@ static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
 static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 			   u32 value)
 {
+	printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
 	switch (reg_offs) {
+
 	case TSCR:
 	case RSCR:
 		iowrite16(value, p->mapbase + reg_offs);
@@ -239,6 +253,7 @@ static irqreturn_t sh_msiof_spi_irq(int irq, void *data)
 {
 	struct sh_msiof_spi_priv *p = data;
 
+	h_debug;
 	/* just disable the interrupt and wake up */
 	sh_msiof_write(p, IER, 0);
 	complete(&p->done);
@@ -333,6 +348,7 @@ static u32 sh_msiof_spi_get_dtdl_and_syncdl(struct sh_msiof_spi_priv *p)
 	return val;
 }
 
+static int h_test = 0;
 static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p, u32 ss,
 				      u32 cpol, u32 cpha,
 				      u32 tx_hi_z, u32 lsb_first, u32 cs_high)
@@ -340,6 +356,30 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p, u32 ss,
 	u32 tmp;
 	int edge;
 
+	h_test ++;
+
+
+//	cs_high = 0; ss = 1;
+
+//	if(h_test > 10)
+//		ss = 1;
+//
+//	if(h_test > 15)
+//	{
+//		cs_high = 1;
+//		ss = 0;
+//	}
+//
+//	if(h_test > 20)
+//	{
+//		ss = 1;
+//	}
+//
+//	if(h_test > 25)
+//	{
+//		cs_high = 0; ss = 0;
+//	}
+	printk("file %s func %s line %d ss %ld cs_high %ld h_test %d", __FILE__, __FUNCTION__, __LINE__, ss, cs_high, h_test);
 	/*
 	 * CPOL CPHA     TSCKIZ RSCKIZ TEDG REDG
 	 *    0    0         10     10    1    1
@@ -352,12 +392,15 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p, u32 ss,
 	tmp |= lsb_first << MDR1_BITLSB_SHIFT;
 	tmp |= sh_msiof_spi_get_dtdl_and_syncdl(p);
 	if (spi_controller_is_slave(p->master)) {
+		printk("file %s func %s line %d ss %ld cs_high %ld h_test %d", __FILE__, __FUNCTION__, __LINE__, ss, cs_high, h_test);
 		sh_msiof_write(p, TMDR1, tmp | TMDR1_PCON);
 	} else {
 		sh_msiof_write(p, TMDR1,
 			       tmp | MDR1_TRMD | TMDR1_PCON |
 			       (ss < MAX_SS ? ss : 0) << TMDR1_SYNCCH_SHIFT);
+		printk("file %s func %s line %d ss %ld cs_high %ld h_test %d", __FILE__, __FUNCTION__, __LINE__, ss, cs_high, h_test);
 	}
+
 	if (p->master->flags & SPI_MASTER_MUST_TX) {
 		/* These bits are reserved if RX needs TX */
 		tmp &= ~0x0000ffff;
@@ -403,6 +446,7 @@ static void sh_msiof_spi_write_fifo_8(struct sh_msiof_spi_priv *p,
 	const u8 *buf_8 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, buf_8[k] << fs);
 }
@@ -413,6 +457,7 @@ static void sh_msiof_spi_write_fifo_16(struct sh_msiof_spi_priv *p,
 	const u16 *buf_16 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, buf_16[k] << fs);
 }
@@ -423,6 +468,7 @@ static void sh_msiof_spi_write_fifo_16u(struct sh_msiof_spi_priv *p,
 	const u16 *buf_16 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, get_unaligned(&buf_16[k]) << fs);
 }
@@ -433,6 +479,7 @@ static void sh_msiof_spi_write_fifo_32(struct sh_msiof_spi_priv *p,
 	const u32 *buf_32 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, buf_32[k] << fs);
 }
@@ -443,6 +490,7 @@ static void sh_msiof_spi_write_fifo_32u(struct sh_msiof_spi_priv *p,
 	const u32 *buf_32 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, get_unaligned(&buf_32[k]) << fs);
 }
@@ -453,6 +501,7 @@ static void sh_msiof_spi_write_fifo_s32(struct sh_msiof_spi_priv *p,
 	const u32 *buf_32 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, swab32(buf_32[k] << fs));
 }
@@ -463,6 +512,7 @@ static void sh_msiof_spi_write_fifo_s32u(struct sh_msiof_spi_priv *p,
 	const u32 *buf_32 = tx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		sh_msiof_write(p, TFDR, swab32(get_unaligned(&buf_32[k]) << fs));
 }
@@ -473,6 +523,7 @@ static void sh_msiof_spi_read_fifo_8(struct sh_msiof_spi_priv *p,
 	u8 *buf_8 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		buf_8[k] = sh_msiof_read(p, RFDR) >> fs;
 }
@@ -483,6 +534,7 @@ static void sh_msiof_spi_read_fifo_16(struct sh_msiof_spi_priv *p,
 	u16 *buf_16 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		buf_16[k] = sh_msiof_read(p, RFDR) >> fs;
 }
@@ -493,6 +545,7 @@ static void sh_msiof_spi_read_fifo_16u(struct sh_msiof_spi_priv *p,
 	u16 *buf_16 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		put_unaligned(sh_msiof_read(p, RFDR) >> fs, &buf_16[k]);
 }
@@ -503,6 +556,7 @@ static void sh_msiof_spi_read_fifo_32(struct sh_msiof_spi_priv *p,
 	u32 *buf_32 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		buf_32[k] = sh_msiof_read(p, RFDR) >> fs;
 }
@@ -513,6 +567,7 @@ static void sh_msiof_spi_read_fifo_32u(struct sh_msiof_spi_priv *p,
 	u32 *buf_32 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		put_unaligned(sh_msiof_read(p, RFDR) >> fs, &buf_32[k]);
 }
@@ -523,6 +578,7 @@ static void sh_msiof_spi_read_fifo_s32(struct sh_msiof_spi_priv *p,
 	u32 *buf_32 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		buf_32[k] = swab32(sh_msiof_read(p, RFDR) >> fs);
 }
@@ -533,6 +589,7 @@ static void sh_msiof_spi_read_fifo_s32u(struct sh_msiof_spi_priv *p,
 	u32 *buf_32 = rx_buf;
 	int k;
 
+	h_debug;
 	for (k = 0; k < words; k++)
 		put_unaligned(swab32(sh_msiof_read(p, RFDR) >> fs), &buf_32[k]);
 }
@@ -579,6 +636,7 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
 	return 0;
 }
 
+
 static int sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
 {
@@ -586,7 +644,8 @@ static int sh_msiof_prepare_message(struct spi_master *master,
 	const struct spi_device *spi = msg->spi;
 	u32 ss, cs_high;
 
-	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+
+	//printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	/* Configure pins before asserting CS */
 	if (gpio_is_valid(spi->cs_gpio)) {
 		ss = p->unused_ss;
@@ -595,6 +654,8 @@ static int sh_msiof_prepare_message(struct spi_master *master,
 		ss = spi->chip_select;
 		cs_high = !!(spi->mode & SPI_CS_HIGH);
 	}
+
+	printk("file %s func %s line %d ss %d cs_high %d ", __FILE__, __FUNCTION__, __LINE__, ss, cs_high);
 	sh_msiof_spi_set_pin_regs(p, ss, !!(spi->mode & SPI_CPOL),
 				  !!(spi->mode & SPI_CPHA),
 				  !!(spi->mode & SPI_3WIRE),
@@ -608,6 +669,7 @@ static int sh_msiof_spi_start(struct sh_msiof_spi_priv *p, void *rx_buf)
 	int ret = 0;
 
 	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+	mdelay(1000);
 	/* setup clock and rx/tx signals */
 	if (!slave)
 		ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
@@ -623,12 +685,14 @@ static int sh_msiof_spi_start(struct sh_msiof_spi_priv *p, void *rx_buf)
 	return ret;
 }
 
+
 static int sh_msiof_spi_stop(struct sh_msiof_spi_priv *p, void *rx_buf)
 {
 	bool slave = spi_controller_is_slave(p->master);
 	int ret = 0;
 
 	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+
 	/* shut down frame, rx/tx and clock signals */
 	if (!slave)
 		ret = sh_msiof_modify_ctr_wait(p, CTR_TFSE, 0);
@@ -671,6 +735,8 @@ static int sh_msiof_wait_for_completion(struct sh_msiof_spi_priv *p,
 	return 0;
 }
 
+static int i = 0;
+
 static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
 				  void (*tx_fifo)(struct sh_msiof_spi_priv *,
 						  const void *, int, int),
@@ -682,7 +748,10 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
 	int fifo_shift;
 	int ret;
 
-	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+	i++;
+
+	printk("file %s func %s line %d i %d", __FILE__, __FUNCTION__, __LINE__, i);
+
 	/* limit maximum word transfer to rx/tx fifo size */
 	if (tx_buf)
 		words = min_t(int, words, p->tx_fifo_size);
@@ -909,6 +978,7 @@ static void copy_plain32(u32 *dst, const u32 *src, unsigned int words)
 	memcpy(dst, src, words * 4);
 }
 
+static int h_pm_test;
 static int sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
@@ -927,10 +997,37 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 	bool swab;
 	int ret;
 
-	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
+	h_pm_test ++;
+	printk("file %s func %s line %d h_pm_test %d\n t->len %d  bits %d sizeof(int) %d sizeof(unsigned long) %d sizeof(char) %d  sizeof(u8) %d",
+				__FILE__, __FUNCTION__, __LINE__, h_pm_test, t->len, bits, sizeof(int), sizeof(unsigned long), sizeof(char), sizeof(u8));
 	/* setup clocks (clock already enabled in chipselect()) */
 	if (!spi_controller_is_slave(p->master))
 		sh_msiof_spi_set_clk_regs(p, clk_get_rate(p->clk), t->speed_hz);
+
+
+
+	unsigned int sz_tx = sizeof(*tx_buf);
+
+	u8* spi_data = tx_buf;
+
+	printk("file %s func %s line %d sz_tx %d", __FILE__, __FUNCTION__, __LINE__, sz_tx);
+
+	switch (t->len){
+
+	case 1:
+		printk("file %s func %s line %d spi_data %x tx_buf %x ", __FILE__, __FUNCTION__, __LINE__, *spi_data, *((char*)tx_buf));
+		break;
+
+	default:
+		break;
+
+	}
+
+	if (t->len == 1)
+	{
+		//u8* spi_data = tx_buf;
+		printk("file %s func %s line %d spi_data %x tx_fifo %x ", __FILE__, __FUNCTION__, __LINE__, *spi_data, *((char*)tx_buf));
+	}
 
 //	while (master->dma_tx && len > 15) {
 //		/*
@@ -1030,9 +1127,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 	/* transfer in fifo sized chunks */
 	words = len / bytes_per_word;
 
+	printk("file %s func %s line %d words %d", __FILE__, __FUNCTION__, __LINE__, words);
+
 	while (words > 0) {
 		n = sh_msiof_spi_txrx_once(p, tx_fifo, rx_fifo, tx_buf, rx_buf,
 					   words, bits);
+		printk("file %s func %s line %d n_words %d", __FILE__, __FUNCTION__, __LINE__, n);
 		if (n < 0)
 			return n;
 
@@ -1041,6 +1141,52 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 		if (rx_buf)
 			rx_buf += n * bytes_per_word;
 		words -= n;
+	}
+
+
+	if(h_pm_test >= 10)
+	{
+		u32 reg_val;
+
+		/*Config TMDR1*/
+		sh_msiof_write(p, TMDR1, 0xe2000005);
+
+		/*Config RMDR1*/
+		sh_msiof_write(p, RMDR1, 0x22000000);
+
+		/*Config CTR*/
+		sh_msiof_write(p, CTR  , 0xac000000);
+
+		/*Config TSCR*/
+		sh_msiof_write(p, TSCR , 0x1004);
+
+		/*Config FCTR*/
+		sh_msiof_write(p, FCTR , 0x00);
+
+		/*Config TMDR2*/
+		sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
+
+		/*Config IER We are enable only TEOFE and REOFE*/
+		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
+		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
+		sh_msiof_write(p, IER , 0x00800080);
+
+		/*Config TFDR*/
+		sh_msiof_write(p, TFDR , 0xef000000);
+
+		/*Config CTR*/
+		sh_msiof_write(p, CTR , 0xac00c200);
+
+		/*Idle for transmit end and update STR*/
+		reg_val = sh_msiof_read(p, STR);
+		while(!(reg_val & STR_TEOF)){;}
+
+		sh_msiof_write(p, STR , reg_val);
+
+		/*Config CTR for stop*/
+
+		sh_msiof_write(p, CTR , 0x03);
+
 	}
 
 	return 0;
@@ -1110,6 +1256,8 @@ static struct sh_msiof_spi_info *sh_msiof_spi_parse_dt(struct device *dev)
 
 	info->num_chipselect = num_cs;
 
+	printk("file %s func %s line %d num_cs %d",
+				__FILE__, __FUNCTION__, __LINE__, num_cs);
 	return info;
 }
 #else
@@ -1127,31 +1275,42 @@ static int sh_msiof_get_cs_gpios(struct sh_msiof_spi_priv *p)
 	unsigned int num_cs, i;
 	int ret;
 
-	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	ret = gpiod_count(dev, "cs");
+	printk("file %s func %s line %d num_cs %d",
+					__FILE__, __FUNCTION__, __LINE__, num_cs);
 	if (ret <= 0)
-		return 0;
+		return 0;	num_cs = max_t(unsigned int, ret, p->master->num_chipselect);
 
-	num_cs = max_t(unsigned int, ret, p->master->num_chipselect);
+	printk("file %s func %s line %d num_cs %d",
+			__FILE__, __FUNCTION__, __LINE__, num_cs);
+
 	for (i = 0; i < num_cs; i++) {
 		struct gpio_desc *gpiod;
 
 		gpiod = devm_gpiod_get_index(dev, "cs", i, GPIOD_ASIS);
 		if (!IS_ERR(gpiod)) {
 			cs_gpios++;
+			printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 			continue;
 		}
 
 		if (PTR_ERR(gpiod) != -ENOENT)
+		{
+			printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 			return PTR_ERR(gpiod);
+		}
 
 		if (i >= MAX_SS) {
-			dev_err(dev, "Invalid native chip select %d\n", i);
+			//dev_err(dev, "Invalid native chip select %d\n", i);
+			printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 			return -EINVAL;
 		}
 		used_ss_mask |= BIT(i);
+		printk("file %s func %s line %d used_ss_mask %d", __FILE__, __FUNCTION__, __LINE__, used_ss_mask);
 	}
 	p->unused_ss = ffz(used_ss_mask);
+	printk("file %s func %s line %d used_ss_mask %d unused_ss %d", __FILE__, __FUNCTION__, __LINE__, used_ss_mask, p->unused_ss);
+
 	if (cs_gpios && p->unused_ss >= MAX_SS) {
 		dev_err(dev, "No unused native chip select available\n");
 		return -EINVAL;
@@ -1292,6 +1451,39 @@ static void sh_msiof_release_dma(struct sh_msiof_spi_priv *p)
 //	dma_release_channel(master->dma_tx);
 }
 
+
+static int fops_incomplete_transfer_set(void *data, u64 addr)
+{
+	struct sh_msiof_spi_priv *priv = data;
+
+	h_debug;
+
+	return 0;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(fops_incomplete_transfer, NULL, fops_incomplete_transfer_set, "%llu\n");
+static void spi_gpio_fault_injector_init(struct platform_device *pdev)
+{
+	struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
+
+	/*
+	 * If there will be a debugfs-dir per i2c adapter somewhen, put the
+	 * 'fault-injector' dir there. Until then, we have a global dir with
+	 * all adapters as subdirs.
+	 */
+	if (!spi_gpio_debug_dir) {
+		spi_gpio_debug_dir = debugfs_create_dir("spi-fault-injector", NULL);
+		if (!spi_gpio_debug_dir)
+			return;
+	}
+
+	priv->debug_dir = debugfs_create_dir(pdev->name, spi_gpio_debug_dir);
+	if (!priv->debug_dir)
+		return;
+
+	debugfs_create_file_unsafe("incomplete_transfer", 0200, priv->debug_dir,
+				   priv, &fops_incomplete_transfer);
+}
 static int sh_msiof_spi_probe(struct platform_device *pdev)
 {
 	struct resource	*r;
@@ -1302,6 +1494,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
 	int i;
 	int ret;
 
+	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 	chipdata = of_device_get_match_data(&pdev->dev);
 	if (chipdata) {
 		info = sh_msiof_spi_parse_dt(&pdev->dev);
@@ -1402,12 +1595,14 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
 		goto err2;
 	}
 
+	spi_gpio_fault_injector_init(pdev);
 	return 0;
 
  err2:
 	//sh_msiof_release_dma(p);
 	pm_runtime_disable(&pdev->dev);
  err1:
+ 	printk("file %s func %s err1 line %d ", __FILE__, __FUNCTION__, __LINE__);
 	spi_master_put(master);
 	return ret;
 }
