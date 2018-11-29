@@ -227,6 +227,43 @@ static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 	}
 }
 
+
+struct rcar_sh_msiof_priv {
+	void __iomem *mapbase;
+	int low;
+	int high;
+};
+
+static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
+{
+	printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
+	switch (reg_offs) {
+
+	case TSCR:
+	case RSCR:
+		return ioread16(p->mapbase + reg_offs);
+	default:
+		return ioread32(p->mapbase + reg_offs);
+	}
+}
+
+static void h_sh_msiof_write(struct rcar_sh_msiof_priv *p, int reg_offs,
+			   u32 value)
+{
+	printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
+	switch (reg_offs) {
+
+	case TSCR:
+	case RSCR:
+		iowrite16(value, p->mapbase + reg_offs);
+		break;
+	default:
+		iowrite32(value, p->mapbase + reg_offs);
+		break;
+	}
+}
+
+
 static int sh_msiof_modify_ctr_wait(struct sh_msiof_spi_priv *p,
 				    u32 clr, u32 set)
 {
@@ -669,7 +706,7 @@ static int sh_msiof_spi_start(struct sh_msiof_spi_priv *p, void *rx_buf)
 	int ret = 0;
 
 	printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
-	mdelay(1000);
+	//mdelay(1000);
 	/* setup clock and rx/tx signals */
 	if (!slave)
 		ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
@@ -1144,10 +1181,11 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 	}
 
 
-	if(h_pm_test >= 10)
+	if(h_pm_test > 10)
 	{
 		u32 reg_val;
 
+		printk("file %s func %s line %d p->mapbase %x p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->mapbase, p->pdev->name);
 		/*Config TMDR1*/
 		sh_msiof_write(p, TMDR1, 0xe2000005);
 
@@ -1179,7 +1217,7 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 
 		/*Idle for transmit end and update STR*/
 		reg_val = sh_msiof_read(p, STR);
-		while(!(reg_val & STR_TEOF)){;}
+		//while(!(reg_val & STR_TEOF)){;}
 
 		sh_msiof_write(p, STR , reg_val);
 
@@ -1454,9 +1492,59 @@ static void sh_msiof_release_dma(struct sh_msiof_spi_priv *p)
 
 static int fops_incomplete_transfer_set(void *data, u64 addr)
 {
-	struct sh_msiof_spi_priv *priv = data;
+	struct sh_msiof_spi_priv *p = data;
+	struct spi_device *spi;
 
-	h_debug;
+
+	u8		*cp;
+	int			status = 0;
+	*cp = 0x06;
+
+	spi->master = p->master;
+	status = spi_write(spi, cp, 1);
+
+
+	printk("file %s func %s line %d p->mapbase %x p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->mapbase, p->pdev->name);
+	u32 reg_val;
+
+			/*Config TMDR1*/
+			sh_msiof_write(p, TMDR1, 0xe2000005);
+
+			/*Config RMDR1*/
+			sh_msiof_write(p, RMDR1, 0x22000000);
+
+			/*Config CTR*/
+			sh_msiof_write(p, CTR  , 0xac000000);
+
+			/*Config TSCR*/
+			sh_msiof_write(p, TSCR , 0x1004);
+
+			/*Config FCTR*/
+			sh_msiof_write(p, FCTR , 0x00);
+
+			/*Config TMDR2*/
+			sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
+
+			/*Config IER We are enable only TEOFE and REOFE*/
+			/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
+			/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
+			sh_msiof_write(p, IER , 0x00800080);
+
+			/*Config TFDR*/
+			sh_msiof_write(p, TFDR , 0xef000000);
+
+			/*Config CTR*/
+			sh_msiof_write(p, CTR , 0xac00c200);
+
+			/*Idle for transmit end and update STR*/
+			reg_val = sh_msiof_read(p, STR);
+			//while(!(reg_val & STR_TEOF)){;}
+
+			sh_msiof_write(p, STR , reg_val);
+
+			/*Config CTR for stop*/
+
+			sh_msiof_write(p, CTR , 0x03);
 
 	return 0;
 }
@@ -1464,8 +1552,9 @@ static int fops_incomplete_transfer_set(void *data, u64 addr)
 DEFINE_DEBUGFS_ATTRIBUTE(fops_incomplete_transfer, NULL, fops_incomplete_transfer_set, "%llu\n");
 static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 {
-	struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
+	//struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
 
+	struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
 	/*
 	 * If there will be a debugfs-dir per i2c adapter somewhen, put the
 	 * 'fault-injector' dir there. Until then, we have a global dir with
@@ -1484,6 +1573,95 @@ static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 	debugfs_create_file_unsafe("incomplete_transfer", 0200, priv->debug_dir,
 				   priv, &fops_incomplete_transfer);
 }
+
+
+static int h_sh_msiof_spi_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct rcar_sh_msiof_priv *priv;
+	struct resource *res;
+	int i;
+	int ret;
+
+	h_debug;
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+	platform_set_drvdata(pdev, priv);
+
+	pm_runtime_enable(dev);
+	pm_runtime_get_sync(dev);
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, i);
+	if (!res)
+		printk("file %s func %s line %d ERR", __FILE__, __FUNCTION__, __LINE__);
+
+	priv->mapbase = devm_ioremap_resource(dev, res);
+	if (IS_ERR(priv->mapbase)) {
+		ret = PTR_ERR(priv->mapbase);
+		h_debug;
+	}
+
+	printk("file %s func %s line %d priv->mapbase %x", __FILE__, __FUNCTION__, __LINE__, priv->mapbase);
+
+	struct rcar_sh_msiof_priv *p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);;
+	p = priv;
+
+	spi_gpio_fault_injector_init(pdev);
+
+	for(i = 0; i< 20; i++ )
+	{
+		mdelay(1000);
+		u32 reg_val;
+
+		printk("file %s func %s line %d p->mapbase %x", __FILE__, __FUNCTION__, __LINE__, p->mapbase);
+		/*Config TMDR1*/
+		h_sh_msiof_write(p, TMDR1, 0xe2000005);
+
+		/*Config RMDR1*/
+		h_sh_msiof_write(p, RMDR1, 0x22000000);
+
+		/*Config CTR*/
+		h_sh_msiof_write(p, CTR  , 0xac000000);
+
+		/*Config TSCR*/
+		h_sh_msiof_write(p, TSCR , 0x1004);
+
+		/*Config FCTR*/
+		h_sh_msiof_write(p, FCTR , 0x00);
+
+		/*Config TMDR2*/
+		h_sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
+
+		/*Config IER We are enable only TEOFE and REOFE*/
+		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
+		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
+		h_sh_msiof_write(p, IER , 0x00800080);
+
+		/*Config TFDR*/
+		h_sh_msiof_write(p, TFDR , 0xef000000);
+
+		/*Config CTR*/
+		h_sh_msiof_write(p, CTR , 0xac00c200);
+
+		/*Idle for transmit end and update STR*/
+		reg_val = h_sh_msiof_read(p, STR);
+		//while(!(reg_val & STR_TEOF)){;}
+
+		h_sh_msiof_write(p, STR , reg_val);
+
+		/*Config CTR for stop*/
+
+		h_sh_msiof_write(p, CTR , 0x03);
+
+	}
+
+
+	return ret;
+}
+
+
 static int sh_msiof_spi_probe(struct platform_device *pdev)
 {
 	struct resource	*r;
@@ -1647,7 +1825,7 @@ static SIMPLE_DEV_PM_OPS(sh_msiof_spi_pm_ops, sh_msiof_spi_suspend,
 #endif /* CONFIG_PM_SLEEP */
 
 static struct platform_driver sh_msiof_spi_drv = {
-	.probe		= sh_msiof_spi_probe,
+	.probe		= h_sh_msiof_spi_probe,
 	.remove		= sh_msiof_spi_remove,
 	.id_table	= spi_driver_ids,
 	.driver		= {
