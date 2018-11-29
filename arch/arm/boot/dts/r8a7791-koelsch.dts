@@ -56,8 +56,8 @@
 	};
 
 	chosen {
-		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
-		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttySC0,38400 ignore_loglevel consoleblank=0 rw root=/dev/nfs nfsroot=192.168.1.8:/tftpboot/rootfs ip=192.168.1.28";
+		stdout-path = "serial0:38400n8";
 	};
 
 	memory@40000000 {
@@ -583,12 +583,6 @@
 		function = "qspi";
 	};
 
-	msiof0_pins: msiof0 {
-		groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
-				 "msiof0_tx";
-		function = "msiof0";
-	};
-
 	usb0_pins: usb0 {
 		groups = "usb0";
 		function = "usb0";
@@ -597,6 +591,11 @@
 	usb1_pins: usb1 {
 		groups = "usb1";
 		function = "usb1";
+	};
+
+	msiof1_pins: msiof1 {
+		groups = "msiof1_clk", "msiof1_tx", "msiof1_rx";
+		function = "msiof1";
 	};
 
 	vin0_pins: vin0 {
@@ -745,20 +744,18 @@
 	};
 };
 
-&msiof0 {
-	pinctrl-0 = <&msiof0_pins>;
+&msiof1 {
+	pinctrl-0 = <&msiof1_pins>;
 	pinctrl-names = "default";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>,
+		   <&gpio0 24 GPIO_ACTIVE_LOW>,
+		   <&gpio0 25 GPIO_ACTIVE_LOW>;
 	status = "okay";
-
-	pmic: pmic@0 {
-		compatible = "renesas,r2a11302ft";
-		reg = <0>;
-		spi-max-frequency = <6000000>;
-		spi-cpol;
-		spi-cpha;
-	};
 };
+
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_pins>;
