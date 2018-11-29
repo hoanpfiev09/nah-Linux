@@ -208,31 +208,31 @@ static int at25_ee_write(void *priv, unsigned int off, void *val, size_t count)
 		 */
 
 		/* Wait for non-busy status */
-		timeout = jiffies + msecs_to_jiffies(EE_TIMEOUT);
-		retries = 0;
-		do {
-
-			sr = spi_w8r8(at25->spi, AT25_RDSR);
-			if (sr < 0 || (sr & AT25_SR_nRDY)) {
-				dev_dbg(&at25->spi->dev,
-					"rdsr --> %d (%02x)\n", sr, sr);
-				/* at HZ=100, this is sloooow */
-				msleep(1);
-				continue;
-			}
-			if (!(sr & AT25_SR_nRDY))
-				break;
-		} while (retries++ < 3 || time_before_eq(jiffies, timeout));
-
-		if ((sr < 0) || (sr & AT25_SR_nRDY)) {
-			dev_err(&at25->spi->dev,
-				"write %u bytes offset %u, timeout after %u msecs\n",
-				segment, offset,
-				jiffies_to_msecs(jiffies -
-					(timeout - EE_TIMEOUT)));
-			status = -ETIMEDOUT;
-			break;
-		}
+//		timeout = jiffies + msecs_to_jiffies(EE_TIMEOUT);
+//		retries = 0;
+//		do {
+//
+//			sr = spi_w8r8(at25->spi, AT25_RDSR);
+//			if (sr < 0 || (sr & AT25_SR_nRDY)) {
+//				dev_dbg(&at25->spi->dev,
+//					"rdsr --> %d (%02x)\n", sr, sr);
+//				/* at HZ=100, this is sloooow */
+//				msleep(1);
+//				continue;
+//			}
+//			if (!(sr & AT25_SR_nRDY))
+//				break;
+//		} while (retries++ < 3 || time_before_eq(jiffies, timeout));
+//
+//		if ((sr < 0) || (sr & AT25_SR_nRDY)) {
+//			dev_err(&at25->spi->dev,
+//				"write %u bytes offset %u, timeout after %u msecs\n",
+//				segment, offset,
+//				jiffies_to_msecs(jiffies -
+//					(timeout - EE_TIMEOUT)));
+//			status = -ETIMEDOUT;
+//			break;
+//		}
 
 		off += segment;
 		buf += segment;
