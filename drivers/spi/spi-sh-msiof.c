@@ -230,8 +230,8 @@ static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 
 struct rcar_sh_msiof_priv {
 	void __iomem *mapbase;
-	int low;
-	int high;
+	struct clk *clk;
+	struct spi_master	*master;
 
 	struct dentry *debug_dir;
 };
@@ -296,6 +296,12 @@ static irqreturn_t sh_msiof_spi_irq(int irq, void *data)
 	/* just disable the interrupt and wake up */
 	sh_msiof_write(p, IER, 0);
 	complete(&p->done);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t h_sh_msiof_spi_irq(int irq, void *data)
+{
 
 	return IRQ_HANDLED;
 }
@@ -676,6 +682,21 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
 }
 
 
+static int h_sh_msiof_spi_setup(struct spi_device *spi)
+{
+	struct device_node	*np = spi->master->dev.of_node;
+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
+
+	return 0;
+}
+
+
+static int h_sh_msiof_prepare_message(struct spi_master *master,
+				    struct spi_message *msg)
+{
+	return 0;
+}
+
 static int sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
 {
@@ -1018,6 +1039,14 @@ static void copy_plain32(u32 *dst, const u32 *src, unsigned int words)
 }
 
 static int h_pm_test;
+
+static int h_sh_msiof_transfer_one(struct spi_master *master,
+				 struct spi_device *spi,
+				 struct spi_transfer *t)
+{
+	return 0;
+}
+
 static int sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
@@ -1566,11 +1595,25 @@ static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 	debugfs_create_file_unsafe("incomplete_transfer", 0200, priv->debug_dir,
 				   priv, &fops_incomplete_transfer);
 }
+static void h_sh_msiof_spi_cleanup(struct spi_device *spi)
+{
+	/* de-activate cs-gpio */
+	gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
+}
 
+static int h_sh_msiof_spi_prepare_hardware(struct spi_master *master)
+{
+	return 0;
+}
+
+
+static int h_sh_msiof_spi_unprepare_hardware(struct spi_master *master)
+{
+	return 0;
+}
 
 static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 {
-
 	struct spi_master *master;
 	struct rcar_sh_msiof_priv *priv;
 
@@ -1581,32 +1624,117 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 
 	h_debug;
 
-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-	if (!priv)
+	master = spi_alloc_master(&pdev->dev, sizeof(*priv));
+	if (!master)
 		return -ENOMEM;
+
+	priv = spi_master_get_devdata(master);
+	priv->master = master;
+
 	platform_set_drvdata(pdev, priv);
 
-	pm_runtime_enable(dev);
-	pm_runtime_get_sync(dev);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	priv->mapbase = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(priv->mapbase))
+		return PTR_ERR(priv->mapbase);
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-	if (!res)
-		printk("file %s func %s line %d ERR", __FILE__, __FUNCTION__, __LINE__);
-
-	priv->mapbase = devm_ioremap_resource(dev, res);
-	if (IS_ERR(priv->mapbase)) {
-		ret = PTR_ERR(priv->mapbase);
-		h_debug;
+	i = platform_get_irq(pdev, 0);
+	if (i < 0) {
+		dev_err(&pdev->dev, "cannot get IRQ\n");
+		ret = i;
+		goto err1;
 	}
 
-	printk("file %s func %s line %d priv->mapbase %x", __FILE__, __FUNCTION__, __LINE__, priv->mapbase);
+	ret = devm_request_irq(&pdev->dev, i, h_sh_msiof_spi_irq, 0,
+			       dev_name(&pdev->dev), priv);
 
-	struct rcar_sh_msiof_priv *p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);;
-	p = priv;
+	if (ret) {
+		dev_err(&pdev->dev, "unable to request irq\n");
+		goto err1;
+	}
+
+	/* get clock */
+	priv->clk = devm_clk_get(&pdev->dev, NULL);
+	if (IS_ERR(priv->clk)) {
+		dev_err(&pdev->dev, "clk not found\n");
+		ret = PTR_ERR(priv->clk);
+		goto err1;
+	}
+
+	ret = clk_prepare_enable(priv->clk);
+	if (ret)
+		goto err1;
+
+	/* init master code */
+
+	master->dev.of_node	= pdev->dev.of_node;
+	master->mode_bits	= SPI_MODE_3 | SPI_MODE_0 | SPI_CS_HIGH;
+	//	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
+
+	master->num_chipselect	= 1; /* single chip-select */
+
+	/*
+	master->num_chipselect = p->info->num_chipselect;
+	ret = sh_msiof_get_cs_gpios(p);
+	if (ret)
+		goto err1;
+	 *
+	  */
+	master->max_speed_hz	= clk_get_rate(priv->clk);
+
+	master->setup		= h_sh_msiof_spi_setup;
+
+	master->cleanup		= h_sh_msiof_spi_cleanup;
+
+	master->flags		= SPI_MASTER_MUST_TX | SPI_MASTER_MUST_RX;
+	//master->flags = chipdata->master_flags;
+
+	master->bits_per_word_mask	= SPI_BPW_MASK(8) | SPI_BPW_MASK(16) |
+					  SPI_BPW_MASK(32);
+	//SPI_BPW_RANGE_MASK(8, 32);
+
+	master->transfer_one		= h_sh_msiof_transfer_one;
+	master->prepare_message		= h_sh_msiof_prepare_message;
+	//master->unprepare_message	= pic32_spi_unprepare_message;
+
+
+	master->prepare_transfer_hardware	= h_sh_msiof_spi_prepare_hardware;
+	master->unprepare_transfer_hardware	= h_sh_msiof_spi_unprepare_hardware;
+
+
+
+
+//	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+//	if (!priv)
+//		return -ENOMEM;
+//	platform_set_drvdata(pdev, priv);
+//
+//	pm_runtime_enable(dev);
+//	pm_runtime_get_sync(dev);
+//
+//	res = platform_get_resource(pdev, IORESOURCE_MEM, i);
+//	if (!res)
+//		printk("file %s func %s line %d ERR", __FILE__, __FUNCTION__, __LINE__);
+//
+//	priv->mapbase = devm_ioremap_resource(dev, res);
+//	if (IS_ERR(priv->mapbase)) {
+//		ret = PTR_ERR(priv->mapbase);
+//		h_debug;
+//	}
+//
+//	printk("file %s func %s line %d priv->mapbase %x", __FILE__, __FUNCTION__, __LINE__, priv->mapbase);
+//
+//	struct rcar_sh_msiof_priv *p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);;
+//	p = priv;
 
 	spi_gpio_fault_injector_init(pdev);
 
 	return ret;
+
+	err1:
+	printk("file %s func %s err1 line %d ", __FILE__, __FUNCTION__, __LINE__);
+	return 0;
+
 }
 
 
