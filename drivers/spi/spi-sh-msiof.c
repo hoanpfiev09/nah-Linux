@@ -232,6 +232,8 @@ struct rcar_sh_msiof_priv {
 	void __iomem *mapbase;
 	int low;
 	int high;
+
+	struct dentry *debug_dir;
 };
 
 static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
@@ -1492,59 +1494,50 @@ static void sh_msiof_release_dma(struct sh_msiof_spi_priv *p)
 
 static int fops_incomplete_transfer_set(void *data, u64 addr)
 {
-	struct sh_msiof_spi_priv *p = data;
-	struct spi_device *spi;
+	struct rcar_sh_msiof_priv *p = data;
 
+		mdelay(1000);
+		u32 reg_val;
 
-	u8		*cp;
-	int			status = 0;
-	*cp = 0x06;
+		printk("file %s func %s line %d p->mapbase %x", __FILE__, __FUNCTION__, __LINE__, p->mapbase);
+		/*Config TMDR1*/
+		h_sh_msiof_write(p, TMDR1, 0xe2000005);
 
-	spi->master = p->master;
-	status = spi_write(spi, cp, 1);
+		/*Config RMDR1*/
+		h_sh_msiof_write(p, RMDR1, 0x22000000);
 
+		/*Config CTR*/
+		h_sh_msiof_write(p, CTR  , 0xac000000);
 
-	printk("file %s func %s line %d p->mapbase %x p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->mapbase, p->pdev->name);
-	u32 reg_val;
+		/*Config TSCR*/
+		h_sh_msiof_write(p, TSCR , 0x1004);
 
-			/*Config TMDR1*/
-			sh_msiof_write(p, TMDR1, 0xe2000005);
+		/*Config FCTR*/
+		h_sh_msiof_write(p, FCTR , 0x00);
 
-			/*Config RMDR1*/
-			sh_msiof_write(p, RMDR1, 0x22000000);
+		/*Config TMDR2*/
+		h_sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
 
-			/*Config CTR*/
-			sh_msiof_write(p, CTR  , 0xac000000);
+		/*Config IER We are enable only TEOFE and REOFE*/
+		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
+		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
+		h_sh_msiof_write(p, IER , 0x00800080);
 
-			/*Config TSCR*/
-			sh_msiof_write(p, TSCR , 0x1004);
+		/*Config TFDR*/
+		h_sh_msiof_write(p, TFDR , 0xcd000000);
 
-			/*Config FCTR*/
-			sh_msiof_write(p, FCTR , 0x00);
+		/*Config CTR*/
+		h_sh_msiof_write(p, CTR , 0xac00c200);
 
-			/*Config TMDR2*/
-			sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
+		/*Idle for transmit end and update STR*/
+		reg_val = h_sh_msiof_read(p, STR);
+		//while(!(reg_val & STR_TEOF)){;}
 
-			/*Config IER We are enable only TEOFE and REOFE*/
-			/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
-			/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
-			sh_msiof_write(p, IER , 0x00800080);
+		h_sh_msiof_write(p, STR , reg_val);
 
-			/*Config TFDR*/
-			sh_msiof_write(p, TFDR , 0xef000000);
+		/*Config CTR for stop*/
 
-			/*Config CTR*/
-			sh_msiof_write(p, CTR , 0xac00c200);
-
-			/*Idle for transmit end and update STR*/
-			reg_val = sh_msiof_read(p, STR);
-			//while(!(reg_val & STR_TEOF)){;}
-
-			sh_msiof_write(p, STR , reg_val);
-
-			/*Config CTR for stop*/
-
-			sh_msiof_write(p, CTR , 0x03);
+		h_sh_msiof_write(p, CTR , 0x03);
 
 	return 0;
 }
@@ -1554,7 +1547,7 @@ static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 {
 	//struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
 
-	struct sh_msiof_spi_priv *priv = platform_get_drvdata(pdev);
+	struct rcar_sh_msiof_priv *priv = platform_get_drvdata(pdev);
 	/*
 	 * If there will be a debugfs-dir per i2c adapter somewhen, put the
 	 * 'fault-injector' dir there. Until then, we have a global dir with
@@ -1577,8 +1570,11 @@ static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 
 static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 {
-	struct device *dev = &pdev->dev;
+
+	struct spi_master *master;
 	struct rcar_sh_msiof_priv *priv;
+
+	struct device *dev = &pdev->dev;
 	struct resource *res;
 	int i;
 	int ret;
@@ -1609,54 +1605,6 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	p = priv;
 
 	spi_gpio_fault_injector_init(pdev);
-
-	for(i = 0; i< 20; i++ )
-	{
-		mdelay(1000);
-		u32 reg_val;
-
-		printk("file %s func %s line %d p->mapbase %x", __FILE__, __FUNCTION__, __LINE__, p->mapbase);
-		/*Config TMDR1*/
-		h_sh_msiof_write(p, TMDR1, 0xe2000005);
-
-		/*Config RMDR1*/
-		h_sh_msiof_write(p, RMDR1, 0x22000000);
-
-		/*Config CTR*/
-		h_sh_msiof_write(p, CTR  , 0xac000000);
-
-		/*Config TSCR*/
-		h_sh_msiof_write(p, TSCR , 0x1004);
-
-		/*Config FCTR*/
-		h_sh_msiof_write(p, FCTR , 0x00);
-
-		/*Config TMDR2*/
-		h_sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
-
-		/*Config IER We are enable only TEOFE and REOFE*/
-		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
-		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
-		h_sh_msiof_write(p, IER , 0x00800080);
-
-		/*Config TFDR*/
-		h_sh_msiof_write(p, TFDR , 0xef000000);
-
-		/*Config CTR*/
-		h_sh_msiof_write(p, CTR , 0xac00c200);
-
-		/*Idle for transmit end and update STR*/
-		reg_val = h_sh_msiof_read(p, STR);
-		//while(!(reg_val & STR_TEOF)){;}
-
-		h_sh_msiof_write(p, STR , reg_val);
-
-		/*Config CTR for stop*/
-
-		h_sh_msiof_write(p, CTR , 0x03);
-
-	}
-
 
 	return ret;
 }
