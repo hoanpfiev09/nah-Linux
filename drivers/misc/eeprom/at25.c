@@ -165,12 +165,12 @@ static int at25_ee_write(void *priv, unsigned int off, void *val, size_t count)
 		int		sr;
 		u8		instr;
 
-		*cp = AT25_WREN;
-		status = spi_write(at25->spi, cp, 1);
-		if (status < 0) {
-			dev_dbg(&at25->spi->dev, "WREN --> %d\n", status);
-			break;
-		}
+//		*cp = AT25_WREN;
+//		status = spi_write(at25->spi, cp, 1);
+//		if (status < 0) {
+//			dev_dbg(&at25->spi->dev, "WREN --> %d\n", status);
+//			break;
+//		}
 
 		instr = AT25_WRITE;
 		if (at25->chip.flags & EE_INSTR_BIT3_IS_ADDR)
