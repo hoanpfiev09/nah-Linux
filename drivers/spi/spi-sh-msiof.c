@@ -46,6 +46,17 @@ struct sh_msiof_chipdata {
 	u16 min_div_pow;
 };
 
+struct rcar_sh_msiof_priv {
+	void __iomem *mapbase;
+	struct clk *clk;
+	struct spi_master	*master;
+	struct platform_device *pdev;
+
+	struct completion done;
+
+	struct dentry *debug_dir;
+};
+
 struct sh_msiof_spi_priv {
 	struct spi_master *master;
 	void __iomem *mapbase;
@@ -226,15 +237,6 @@ static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 		break;
 	}
 }
-
-
-struct rcar_sh_msiof_priv {
-	void __iomem *mapbase;
-	struct clk *clk;
-	struct spi_master	*master;
-
-	struct dentry *debug_dir;
-};
 
 static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
 {
@@ -639,6 +641,15 @@ static void sh_msiof_spi_read_fifo_s32u(struct sh_msiof_spi_priv *p,
 		put_unaligned(swab32(sh_msiof_read(p, RFDR) >> fs), &buf_32[k]);
 }
 
+static int h_sh_msiof_spi_setup(struct spi_device *spi)
+{
+	struct device_node	*np = spi->master->dev.of_node;
+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
+
+	return 0;
+}
+
+
 static int sh_msiof_spi_setup(struct spi_device *spi)
 {
 	struct device_node	*np = spi->master->dev.of_node;
@@ -680,16 +691,6 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
 	p->native_cs_inited = true;
 	return 0;
 }
-
-
-static int h_sh_msiof_spi_setup(struct spi_device *spi)
-{
-	struct device_node	*np = spi->master->dev.of_node;
-	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
-
-	return 0;
-}
-
 
 static int h_sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
@@ -1633,6 +1634,9 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, priv);
 
+	pm_runtime_enable(dev);
+	//pm_runtime_get_sync(dev);
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	priv->mapbase = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(priv->mapbase))
@@ -1697,11 +1701,20 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	master->prepare_message		= h_sh_msiof_prepare_message;
 	//master->unprepare_message	= pic32_spi_unprepare_message;
 
-
 	master->prepare_transfer_hardware	= h_sh_msiof_spi_prepare_hardware;
 	master->unprepare_transfer_hardware	= h_sh_msiof_spi_unprepare_hardware;
 
 
+	priv->pdev = pdev;
+
+	init_completion(&priv->done);
+
+
+	ret = devm_spi_register_master(&pdev->dev, master);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "spi_register_master error.\n");
+		goto err1;
+	}
 
 
 //	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
