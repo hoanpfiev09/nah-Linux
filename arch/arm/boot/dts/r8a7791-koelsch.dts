@@ -754,6 +754,37 @@
 		   <&gpio0 24 GPIO_ACTIVE_LOW>,
 		   <&gpio0 25 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+
+	flash0: eeprom@0 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <0>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
+
+	flash1: eeprom@1 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <1>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
+
+	flash2: eeprom@2 {
+		compatible = "microchip,25lc040", "atmel,at25";
+		reg = <2>;
+
+		pagesize = <16>;
+		size = <512>;
+		address-width = <9>;
+		spi-max-frequency = <100000>;
+	};
 };
 
 
