@@ -644,8 +644,10 @@ static void sh_msiof_spi_read_fifo_s32u(struct sh_msiof_spi_priv *p,
 static int h_sh_msiof_spi_setup(struct spi_device *spi)
 {
 	struct device_node	*np = spi->master->dev.of_node;
-	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
+	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(spi->master);
 
+	printk("file %s func %s line %d p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->pdev->name);
+	//h_debug;
 	return 0;
 }
 
@@ -695,6 +697,7 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
 static int h_sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
 {
+	h_debug;
 	return 0;
 }
 
@@ -1045,6 +1048,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
 {
+	h_debug;
 	return 0;
 }
 
@@ -1598,18 +1602,21 @@ static void spi_gpio_fault_injector_init(struct platform_device *pdev)
 }
 static void h_sh_msiof_spi_cleanup(struct spi_device *spi)
 {
+	h_debug;
 	/* de-activate cs-gpio */
 	gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
 }
 
 static int h_sh_msiof_spi_prepare_hardware(struct spi_master *master)
 {
+	h_debug;
 	return 0;
 }
 
 
 static int h_sh_msiof_spi_unprepare_hardware(struct spi_master *master)
 {
+	h_debug;
 	return 0;
 }
 
