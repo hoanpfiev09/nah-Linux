@@ -645,10 +645,32 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 {
 	struct device_node	*np = spi->master->dev.of_node;
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(spi->master);
+	int ret;
 
-	printk("file %s func %s line %d p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->pdev->name);
+	if (!np) {
+		/*
+		 * Use spi->controller_data for CS (same strategy as spi_gpio),
+		 * if any. otherwise let HW control CS
+		 */
+		spi->cs_gpio = (uintptr_t)spi->controller_data;
+	}
+
+	if (!gpio_is_valid(spi->cs_gpio)) {
+		dev_err(&spi->dev, "%d is not a valid gpio\n",
+				spi->cs_gpio);
+		return -EINVAL;
+	}
+
+	if (gpio_is_valid(spi->cs_gpio)) {
+		gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
+		printk("file %s func %s line %d p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->pdev->name);
+		return 0;
+	}
+
+	if(!ret)
+
 	//h_debug;
-	return 0;
+	return ret;
 }
 
 
@@ -698,6 +720,9 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
 {
 	h_debug;
+	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
+	struct spi_device *spi = msg->spi;
+
 	return 0;
 }
 
