@@ -662,8 +662,8 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 	}
 
 	if (gpio_is_valid(spi->cs_gpio)) {
-		gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
-		printk("file %s func %s line %d p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->pdev->name);
+		ret = gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
+		printk("file %s func %s line %d ret %d spi->cs_gpio %d", __FILE__, __FUNCTION__, __LINE__, ret, spi->cs_gpio);
 		return 0;
 	}
 
@@ -722,6 +722,61 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 	h_debug;
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	struct spi_device *spi = msg->spi;
+
+	printk("file %s func %s line %d spi->mode %x", __FILE__, __FUNCTION__, __LINE__, spi->mode);
+	u32 val_reg = 0;
+
+	if(!(spi->mode & SPI_CPOL))
+	{
+		//TMDR1
+		val_reg = h_sh_msiof_read(p, TMDR1);
+		val_reg |= (1 << 25);
+		//RMDR1
+		val_reg = h_sh_msiof_read(p, RMDR1);
+		val_reg |= (1 << 25);
+		//CTR
+		// TSCKIZ[1:0] = 10
+		val_reg = h_sh_msiof_read(p, CTR);
+		val_reg |=  (1 << 31);
+		val_reg = val_reg & (~(1 << 30));
+		val_reg |=  (1 << 29);
+		val_reg = val_reg & (~(1 << 28));
+		h_sh_msiof_write(p, CTR, val_reg);
+	}
+
+	if(!(spi->mode & SPI_CPHA))
+	{
+		//TMDR1
+		//RMDR1
+		// CTR
+		/*Setting for Outputs transmit data at the ? edge of the clock.*/
+		val_reg = h_sh_msiof_read(p, CTR);
+		val_reg |= (1 << 27);
+		val_reg |= (1 << 26);
+		h_sh_msiof_write(p, CTR, val_reg);
+	}
+
+	if(!(spi->mode & SPI_3WIRE))
+	{
+		//TMDR1
+		//RMDR1
+	}
+
+	if(!(spi->mode & SPI_LSB_FIRST))
+	{
+		//TMDR1
+		val_reg = h_sh_msiof_read(p, TMDR1);
+		val_reg &=  (~(1 << 24));
+		h_sh_msiof_write(p, TMDR1, val_reg);
+		//RMDR1
+		val_reg = h_sh_msiof_read(p, RMDR1);
+		val_reg &=  (~(1 << 24));
+		h_sh_msiof_write(p, RMDR1, val_reg);
+		//CTR
+	}
+
+	printk("file %s func %s line %d CTR %x RMDR1 %x TMDR1 %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR),
+			h_sh_msiof_read(p, RMDR1), h_sh_msiof_read(p, TMDR1));
 
 	return 0;
 }
@@ -1073,7 +1128,21 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
 {
-	h_debug;
+
+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+	unsigned int len = t->len;
+	const void *tx_buf = t->tx_buf;
+	unsigned int sz_tx = sizeof(*tx_buf);
+	printk("file %s func %s line %d t->len %d sz_tx %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx);
+//	sh_msiof_write(p, FCTR, 0);
+//	/*Config TFDR*/
+//	h_sh_msiof_write(p, TFDR , 0xcd000000);
+//
+//	/*Config CTR*/
+//	h_sh_msiof_write(p, CTR , 0xac00c200);
+//	udelay(1000);
+//	sh_msiof_write(p, CTR , 0x03);
+
 	return 0;
 }
 
