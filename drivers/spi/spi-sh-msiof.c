@@ -1140,16 +1140,27 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	printk("file %s func %s line %d t->len %d sz_tx %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx);
 
 	sh_msiof_write(p, TSCR, 0x1004);
+	udelay(1000);
 
+	sh_msiof_write(p, FCTR, 0x3f00000);
+	udelay(1000);
+	sh_msiof_write(p, TMDR2, 0x7000000);
+	udelay(1000);
+	sh_msiof_write(p, RMDR2, 0x7000000);
+	udelay(1000);
+	sh_msiof_write(p, IER, 0x800080);
+	udelay(1000);
+	sh_msiof_write(p, FCTR, 0);
+	udelay(1000);
 
-//	sh_msiof_write(p, FCTR, 0);
-//	/*Config TFDR*/
-//	h_sh_msiof_write(p, TFDR , 0xcd000000);
-//	/*Config CTR*/
-//	h_sh_msiof_write(p, CTR , 0xac00c200);
-//	udelay(1000);
-//	sh_msiof_write(p, CTR , 0x03);
-
+	sh_msiof_write(p, FCTR, 0);
+	/*Config TFDR*/
+	h_sh_msiof_write(p, TFDR , 0xcd000000);
+	/*Config CTR*/
+	h_sh_msiof_write(p, CTR , 0xac00c200);
+	udelay(1000);
+	sh_msiof_write(p, CTR , 0x03);
+	udelay(1000);
 	return 0;
 }
 
