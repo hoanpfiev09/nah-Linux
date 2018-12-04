@@ -240,7 +240,7 @@ static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 
 static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
 {
-	printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
+	//printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
 	switch (reg_offs) {
 
 	case TSCR:
@@ -254,7 +254,7 @@ static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
 static void h_sh_msiof_write(struct rcar_sh_msiof_priv *p, int reg_offs,
 			   u32 value)
 {
-	printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
+	//printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
 	switch (reg_offs) {
 
 	case TSCR:
@@ -265,6 +265,14 @@ static void h_sh_msiof_write(struct rcar_sh_msiof_priv *p, int reg_offs,
 		iowrite32(value, p->mapbase + reg_offs);
 		break;
 	}
+}
+
+static void h_sh_msiof_read_reg_inf(struct rcar_sh_msiof_priv *p)
+{
+	printk("TMDR1 %x TMDR2 %x TMDR3 %x RMDR1 %x RMDR2 %x RMDR3 %x CTR %x TSCR %x TFDR %x RFDR %x STR %x IER %x FCTR %x",
+			h_sh_msiof_read(p, TMDR1), h_sh_msiof_read(p, TMDR2), h_sh_msiof_read(p, TMDR3), h_sh_msiof_read(p, RMDR1), h_sh_msiof_read(p, RMDR2)
+			, h_sh_msiof_read(p, RMDR3), h_sh_msiof_read(p, CTR), h_sh_msiof_read(p, TSCR), h_sh_msiof_read(p, TFDR), h_sh_msiof_read(p, RFDR)
+			, h_sh_msiof_read(p, STR), h_sh_msiof_read(p, IER), h_sh_msiof_read(p, FCTR));
 }
 
 
@@ -663,9 +671,12 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 
 	if (gpio_is_valid(spi->cs_gpio)) {
 		ret = gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
+		h_sh_msiof_read_reg_inf(p);
 		printk("file %s func %s line %d ret %d spi->cs_gpio %d", __FILE__, __FUNCTION__, __LINE__, ret, spi->cs_gpio);
 		return 0;
 	}
+
+	h_sh_msiof_read_reg_inf(p);
 
 	if(!ret)
 
@@ -782,6 +793,7 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 	printk("file %s func %s line %d CTR %x RMDR1 %x TMDR1 %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR),
 			h_sh_msiof_read(p, RMDR1), h_sh_msiof_read(p, TMDR1));
 
+	h_sh_msiof_read_reg_inf(p);
 	return 0;
 }
 
@@ -1133,34 +1145,61 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_transfer *t)
 {
 
-	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	printk("file %s func %s line %d t->len %d sz_tx %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx);
 
-	sh_msiof_write(p, TSCR, 0x1004);
-	udelay(1000);
+	h_sh_msiof_write(p, TSCR, 0x1004);
+	h_sh_msiof_read_reg_inf(p);
+	h_sh_msiof_write(p, TMDR2, 0x7000000);
 
-	sh_msiof_write(p, FCTR, 0x3f00000);
-	udelay(1000);
-	sh_msiof_write(p, TMDR2, 0x7000000);
-	udelay(1000);
-	sh_msiof_write(p, RMDR2, 0x7000000);
-	udelay(1000);
-	sh_msiof_write(p, IER, 0x800080);
-	udelay(1000);
-	sh_msiof_write(p, FCTR, 0);
-	udelay(1000);
+	h_sh_msiof_write(p, IER, 0x00);
 
-	sh_msiof_write(p, FCTR, 0);
+	h_sh_msiof_write(p, FCTR, 0x3f00000);
+
 	/*Config TFDR*/
 	h_sh_msiof_write(p, TFDR , 0xcd000000);
+	mdelay(1000);
 	/*Config CTR*/
 	h_sh_msiof_write(p, CTR , 0xac00c200);
-	udelay(1000);
-	sh_msiof_write(p, CTR , 0x03);
-	udelay(1000);
+	mdelay(1000);
+
+	h_sh_msiof_write(p, CTR , 0xac000000);
+
+	h_sh_msiof_write(p, CTR , 0x03);
+
+
+
+//	sh_msiof_write(p, TSCR, 0x1004);
+//	udelay(1000);
+//
+//	sh_msiof_write(p, FCTR, 0x3f00000);
+//	udelay(1000);
+//	sh_msiof_write(p, TMDR2, 0x7000000);
+//	udelay(1000);
+//	sh_msiof_write(p, RMDR2, 0x7000000);
+//	udelay(1000);
+//	sh_msiof_write(p, IER, 0x800080);
+//	udelay(1000);
+//	sh_msiof_write(p, FCTR, 0);
+//	udelay(1000);
+//
+//	sh_msiof_write(p, FCTR, 0);
+//	/*Config TFDR*/
+//	h_sh_msiof_write(p, TFDR , 0xcd000000);
+//	/*Config CTR*/
+//	h_sh_msiof_write(p, CTR , 0xac00c200);
+//	udelay(1000);
+//	sh_msiof_write(p, CTR , 0x03);
+//	udelay(1000);
+//
+//
+
+
+
+
 	return 0;
 }
 
