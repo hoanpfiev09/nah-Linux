@@ -380,6 +380,7 @@ static int h_sh_msiof_transfer_word(struct rcar_sh_msiof_priv *p, u8 *data, unsi
 	u32 d_wrfifo = 0;
 	u32 tmp_TMDR2 = 0;
 
+	printk("file %s func %s line %d nbytes %d data[0] %x", __FILE__, __FUNCTION__, __LINE__, nbytes, data[0]);
 	for(i = 0; i < nbytes; i++)
 	{
 		d_wrfifo |= data[i] << (8 * (4 - (i + 1)));
@@ -414,84 +415,27 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
-	char *data = t->tx_buf;
+	u8 *data = t->tx_buf;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	unsigned int i = 0;
-	printk("file %s func %s line %d t->len %d sz_tx %d data %s", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx, data);
+
 
 	// Configure Clock
 	h_sh_msiof_write(p, TSCR, 0x1004);
 
 	unsigned int n_words = 0;
-	n_words = (len / 4) + (len % 4);
+	n_words = len / 4 + ((len % 4)? 1 : 0);
 
-	for(i = 0; i < len; i++)
+	printk("file %s func %s line %d t->len %d sz_tx %d data[0] %x n_words %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx, data[0], n_words);
+
+	for (i = 0; i < n_words; i++)
 	{
-		printk("file %s func %s line %d i %d data[%d] %x", __FILE__, __FUNCTION__, __LINE__, i, i, data[i]);
+		unsigned int nbytes = 4;
+		if(i == (n_words -1))
+			nbytes = (len % 4)? : nbytes;
+		printk("file %s func %s line %d nbytes %d n_words %d", __FILE__, __FUNCTION__, __LINE__, nbytes, n_words);
+		h_sh_msiof_transfer_word(p, &data[i * 4], nbytes);
 	}
-
-	u32 d_wrfifo = 0;
-
-	h_sh_msiof_transfer_word(p, data, len);
-
-
-//	for(i = 0; i < len; i++)
-//	{
-//		d_wrfifo |= data[i] << (8 * (4 - (i + 1)));
-//		printk("file %s func %s line %d i %d data[%d] %x d_wrfifo %x", __FILE__, __FUNCTION__, __LINE__, i, i, data[i], d_wrfifo);
-//	}
-//
-//	h_sh_msiof_read_reg_inf(p);
-//
-//	//Set TMDR2, set số byte cần truyền đi trong TFDR
-//	u32 tmp_TMDR2 = 0;
-//	tmp_TMDR2 = (t->len * 8 - 1) << 24 ;
-//
-//	printk("file %s func %s line %d tmp_TMDR2 %x", __FILE__, __FUNCTION__, __LINE__, tmp_TMDR2);
-//
-//	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
-//
-//	h_sh_msiof_write(p, IER, 0x00);
-//
-//	h_sh_msiof_write(p, FCTR, 0x3f00000);
-//
-//	/*Config TFDR*/
-//	h_sh_msiof_write(p, TFDR , d_wrfifo);
-//	mdelay(1000);
-//	/*Config CTR*/
-//	h_sh_msiof_write(p, CTR , 0xac00c200);
-//	mdelay(1000);
-//
-//	h_sh_msiof_write(p, CTR , 0xac000000);
-//
-//	h_sh_msiof_write(p, CTR , 0x03);
-
-
-
-//	sh_msiof_write(p, TSCR, 0x1004);
-//	udelay(1000);
-//
-//	sh_msiof_write(p, FCTR, 0x3f00000);
-//	udelay(1000);
-//	sh_msiof_write(p, TMDR2, 0x7000000);
-//	udelay(1000);
-//	sh_msiof_write(p, RMDR2, 0x7000000);
-//	udelay(1000);
-//	sh_msiof_write(p, IER, 0x800080);
-//	udelay(1000);
-//	sh_msiof_write(p, FCTR, 0);
-//	udelay(1000);
-//
-//	sh_msiof_write(p, FCTR, 0);
-//	/*Config TFDR*/
-//	h_sh_msiof_write(p, TFDR , 0xcd000000);
-//	/*Config CTR*/
-//	h_sh_msiof_write(p, CTR , 0xac00c200);
-//	udelay(1000);
-//	sh_msiof_write(p, CTR , 0x03);
-//	udelay(1000);
-//
-//
 
 	return 0;
 }
