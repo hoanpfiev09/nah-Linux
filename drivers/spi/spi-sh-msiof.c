@@ -387,7 +387,11 @@ static int h_sh_msiof_transfer_word(struct rcar_sh_msiof_priv *p, u8 *data, unsi
 		printk("file %s func %s line %d i %d data[%d] %x d_wrfifo %x", __FILE__, __FUNCTION__, __LINE__, i, i, data[i], d_wrfifo);
 	}
 
-	tmp_TMDR2 = (nbytes * 8 - 1) << 24 ;
+	tmp_TMDR2 = h_sh_msiof_read(p, TMDR2);
+	printk("file %s func %s line %d tmp_TMDR2 %x", __FILE__, __FUNCTION__, __LINE__, tmp_TMDR2);
+
+	//tmp_TMDR2 &= ~(31 << 24);
+	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	printk("file %s func %s line %d tmp_TMDR2 %x", __FILE__, __FUNCTION__, __LINE__, tmp_TMDR2);
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
@@ -396,14 +400,11 @@ static int h_sh_msiof_transfer_word(struct rcar_sh_msiof_priv *p, u8 *data, unsi
 
 	/*Config TFDR*/
 	h_sh_msiof_write(p, TFDR , d_wrfifo);
-	mdelay(1000);
-
+	mdelay(100);
 	h_sh_msiof_write(p, CTR , 0xac00c200);
 	mdelay(1000);
 
-	h_sh_msiof_write(p, CTR , 0xac000000);
-
-	h_sh_msiof_write(p, CTR , 0x03);
+	mdelay(5000);
 
 	return 0;
 }
@@ -418,7 +419,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	u8 *data = t->tx_buf;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	unsigned int i = 0;
-
+	u32 tmp_TMDR2 = 0;
 
 	// Configure Clock
 	h_sh_msiof_write(p, TSCR, 0x1004);
@@ -428,6 +429,10 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 
 	printk("file %s func %s line %d t->len %d sz_tx %d data[0] %x n_words %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx, data[0], n_words);
 
+	tmp_TMDR2 |= ((n_words - 1) << 16);
+	printk("file %s func %s line %d tmp_TMDR2 %x", __FILE__, __FUNCTION__, __LINE__, tmp_TMDR2);
+	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
+
 	for (i = 0; i < n_words; i++)
 	{
 		unsigned int nbytes = 4;
@@ -436,6 +441,12 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 		printk("file %s func %s line %d nbytes %d n_words %d", __FILE__, __FUNCTION__, __LINE__, nbytes, n_words);
 		h_sh_msiof_transfer_word(p, &data[i * 4], nbytes);
 	}
+
+
+
+	h_sh_msiof_write(p, CTR , 0xac000000);
+
+	h_sh_msiof_write(p, CTR , 0x03);
 
 	return 0;
 }
@@ -614,26 +625,21 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct rcar_sh_msiof_priv *priv;
-
 	struct device *dev = &pdev->dev;
 	struct resource *res;
 	int i;
 	int ret;
 
 	h_debug;
-
 	master = spi_alloc_master(&pdev->dev, sizeof(*priv));
 	if (!master)
 		return -ENOMEM;
 
 	priv = spi_master_get_devdata(master);
 	priv->master = master;
-
 	platform_set_drvdata(pdev, priv);
-
 	pm_runtime_enable(dev);
 	//pm_runtime_get_sync(dev);
-
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	priv->mapbase = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(priv->mapbase))
@@ -667,13 +673,10 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 		goto err1;
 
 	/* init master code */
-
 	master->dev.of_node	= pdev->dev.of_node;
 	master->mode_bits	= SPI_MODE_3 | SPI_MODE_0 | SPI_CS_HIGH;
 	//	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
-
 	master->num_chipselect	= 1; /* single chip-select */
-
 	/*
 	master->num_chipselect = p->info->num_chipselect;
 	ret = sh_msiof_get_cs_gpios(p);
@@ -682,60 +685,27 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	 *
 	  */
 	master->max_speed_hz	= clk_get_rate(priv->clk);
-
 	master->setup		= h_sh_msiof_spi_setup;
-
 	master->cleanup		= h_sh_msiof_spi_cleanup;
-
 	master->flags		= SPI_MASTER_MUST_TX | SPI_MASTER_MUST_RX;
 	//master->flags = chipdata->master_flags;
-
 	master->bits_per_word_mask	= SPI_BPW_MASK(8) | SPI_BPW_MASK(16) |
 					  SPI_BPW_MASK(32);
 	//SPI_BPW_RANGE_MASK(8, 32);
-
 	master->transfer_one		= h_sh_msiof_transfer_one;
 	master->prepare_message		= h_sh_msiof_prepare_message;
 	//master->unprepare_message	= pic32_spi_unprepare_message;
-
 	master->prepare_transfer_hardware	= h_sh_msiof_spi_prepare_hardware;
 	master->unprepare_transfer_hardware	= h_sh_msiof_spi_unprepare_hardware;
 
-
 	priv->pdev = pdev;
-
 	init_completion(&priv->done);
-
 
 	ret = devm_spi_register_master(&pdev->dev, master);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "spi_register_master error.\n");
 		goto err1;
 	}
-
-
-//	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-//	if (!priv)
-//		return -ENOMEM;
-//	platform_set_drvdata(pdev, priv);
-//
-//	pm_runtime_enable(dev);
-//	pm_runtime_get_sync(dev);
-//
-//	res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-//	if (!res)
-//		printk("file %s func %s line %d ERR", __FILE__, __FUNCTION__, __LINE__);
-//
-//	priv->mapbase = devm_ioremap_resource(dev, res);
-//	if (IS_ERR(priv->mapbase)) {
-//		ret = PTR_ERR(priv->mapbase);
-//		h_debug;
-//	}
-//
-//	printk("file %s func %s line %d priv->mapbase %x", __FILE__, __FUNCTION__, __LINE__, priv->mapbase);
-//
-//	struct rcar_sh_msiof_priv *p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);;
-//	p = priv;
 
 	spi_gpio_fault_injector_init(pdev);
 
