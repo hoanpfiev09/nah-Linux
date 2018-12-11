@@ -238,41 +238,12 @@ static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 	}
 }
 
-static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
-{
-	//printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
-	switch (reg_offs) {
-
-	case TSCR:
-	case RSCR:
-		return ioread16(p->mapbase + reg_offs);
-	default:
-		return ioread32(p->mapbase + reg_offs);
-	}
-}
-
-static void h_sh_msiof_write(struct rcar_sh_msiof_priv *p, int reg_offs,
-			   u32 value)
-{
-	//printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
-	switch (reg_offs) {
-
-	case TSCR:
-	case RSCR:
-		iowrite16(value, p->mapbase + reg_offs);
-		break;
-	default:
-		iowrite32(value, p->mapbase + reg_offs);
-		break;
-	}
-}
-
-static void h_sh_msiof_read_reg_inf(struct rcar_sh_msiof_priv *p)
+static void sh_msiof_read_reg_inf(struct sh_msiof_spi_priv *p)
 {
 	printk("TMDR1 %x TMDR2 %x TMDR3 %x RMDR1 %x RMDR2 %x RMDR3 %x CTR %x TSCR %x TFDR %x RFDR %x STR %x IER %x FCTR %x",
-			h_sh_msiof_read(p, TMDR1), h_sh_msiof_read(p, TMDR2), h_sh_msiof_read(p, TMDR3), h_sh_msiof_read(p, RMDR1), h_sh_msiof_read(p, RMDR2)
-			, h_sh_msiof_read(p, RMDR3), h_sh_msiof_read(p, CTR), h_sh_msiof_read(p, TSCR), h_sh_msiof_read(p, TFDR), h_sh_msiof_read(p, RFDR)
-			, h_sh_msiof_read(p, STR), h_sh_msiof_read(p, IER), h_sh_msiof_read(p, FCTR));
+			sh_msiof_read(p, TMDR1), sh_msiof_read(p, TMDR2), sh_msiof_read(p, TMDR3), sh_msiof_read(p, RMDR1), sh_msiof_read(p, RMDR2)
+			, sh_msiof_read(p, RMDR3), sh_msiof_read(p, CTR), sh_msiof_read(p, TSCR), sh_msiof_read(p, TFDR), sh_msiof_read(p, RFDR)
+			, sh_msiof_read(p, STR), sh_msiof_read(p, IER), sh_msiof_read(p, FCTR));
 }
 
 
@@ -487,6 +458,9 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
 
 	if (rx_buf)
 		sh_msiof_write(p, RMDR2, dr2);
+
+	h_debug;
+	h_sh_msiof_read_reg_inf(p);
 }
 
 static void sh_msiof_reset_str(struct sh_msiof_spi_priv *p)
