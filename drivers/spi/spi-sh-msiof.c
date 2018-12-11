@@ -408,6 +408,17 @@ static int h_sh_msiof_transfer_word(struct rcar_sh_msiof_priv *p, u8 *data, unsi
 
 	return 0;
 }
+
+static int h_sh_msiof_transfer_bytes(struct rcar_sh_msiof_priv *p, u8 *data)
+{
+	u32 tmp_TMDR2 = 0;
+	u32 d_wrfifo = 0;
+
+	d_wrfifo |= data[i] << 24;
+	h_sh_msiof_write(p, TFDR , d_wrfifo);
+	return 0;
+}
+
 static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
@@ -425,24 +436,43 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	h_sh_msiof_write(p, TSCR, 0x1004);
 
 	unsigned int n_words = 0;
-	n_words = len / 4 + ((len % 4)? 1 : 0);
-
-	printk("file %s func %s line %d t->len %d sz_tx %d data[0] %x n_words %d", __FILE__, __FUNCTION__, __LINE__, t->len, sz_tx, data[0], n_words);
+	//n_words = len / 4 + ((len % 4)? 1 : 0);
+	n_words = len;
 
 	tmp_TMDR2 |= ((n_words - 1) << 16);
-	printk("file %s func %s line %d tmp_TMDR2 %x", __FILE__, __FUNCTION__, __LINE__, tmp_TMDR2);
+	unsigned int nbytes = 1;
+	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
 	for (i = 0; i < n_words; i++)
 	{
-		unsigned int nbytes = 4;
-		if(i == (n_words -1))
-			nbytes = (len % 4)? : nbytes;
-		printk("file %s func %s line %d nbytes %d n_words %d", __FILE__, __FUNCTION__, __LINE__, nbytes, n_words);
-		h_sh_msiof_transfer_word(p, &data[i * 4], nbytes);
+		//unsigned int nbytes = 4;
+		//if(i == (n_words -1))
+		//	nbytes = (len % 4)? : nbytes;
+		//printk("file %s func %s line %d nbytes %d n_words %d", __FILE__, __FUNCTION__, __LINE__, nbytes, n_words);
+		//h_sh_msiof_transfer_word(p, &data[i * 4], nbytes);
+		h_sh_msiof_transfer_bytes(p, &data[i]);
+	}
+	h_sh_msiof_write(p, CTR , 0xac00c200);
+
+	//Wait for transfer OK
+	u32 tmp_STR = h_sh_msiof_read(p, STR);
+//	for(;;)
+//	{
+//		if(h_sh_msiof_read(p, STR) & STR_TEOF) break;
+//	}
+//	do {
+//		tmp_STR = h_sh_msiof_read(p, STR);
+//	}while	(!(tmp_STR & STR_TEOF));
+
+	while(!(tmp_STR & STR_TEOF))
+	{
+		//printk("file %s func %s line %d STR %x tmp_STR %x tmp_STR && STR_TEOF %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, STR), tmp_STR, h_sh_msiof_read(p, STR) & STR_TEOF);
+		tmp_STR = h_sh_msiof_read(p, STR);
 	}
 
-
+	/*Clear status*/
+	h_sh_msiof_write(p, STR , tmp_STR);
 
 	h_sh_msiof_write(p, CTR , 0xac000000);
 
