@@ -460,7 +460,7 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
 		sh_msiof_write(p, RMDR2, dr2);
 
 	h_debug;
-	h_sh_msiof_read_reg_inf(p);
+	sh_msiof_read_reg_inf(p);
 }
 
 static void sh_msiof_reset_str(struct sh_msiof_spi_priv *p)
