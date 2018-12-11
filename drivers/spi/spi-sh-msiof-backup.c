@@ -224,7 +224,7 @@ static u32 h_sh_msiof_read(struct rcar_sh_msiof_priv *p, int reg_offs)
 
 static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
 {
-	printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
+	//printk("file %s func %s line %d reg_offs 0x%x", __FILE__, __FUNCTION__, __LINE__, reg_offs);
 	switch (reg_offs) {
 
 	case TSCR:
@@ -254,7 +254,7 @@ static void h_sh_msiof_write(struct rcar_sh_msiof_priv *p, int reg_offs,
 static void sh_msiof_write(struct sh_msiof_spi_priv *p, int reg_offs,
 			   u32 value)
 {
-	printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
+	//printk("file %s func %s line %d reg_offs 0x%x value 0x%lx", __FILE__, __FUNCTION__, __LINE__, reg_offs, value);
 	switch (reg_offs) {
 
 	case TSCR:
@@ -496,7 +496,6 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
 		sh_msiof_write(p, RMDR2, dr2);
 
 	h_debug;
-	sh_msiof_read_reg_inf(p);
 }
 
 static void sh_msiof_reset_str(struct sh_msiof_spi_priv *p)
@@ -513,7 +512,11 @@ static void sh_msiof_spi_write_fifo_8(struct sh_msiof_spi_priv *p,
 
 	h_debug;
 	for (k = 0; k < words; k++)
+	{
+		printk("file %s func %s line %d buf_8[%d] %x fs %d buf_8[%d] << fs %x",
+				__FILE__, __FUNCTION__, __LINE__, k, buf_8[k], fs, k, buf_8[k] << fs);
 		sh_msiof_write(p, TFDR, buf_8[k] << fs);
+	}
 }
 
 static void sh_msiof_spi_write_fifo_16(struct sh_msiof_spi_priv *p,
@@ -826,10 +829,14 @@ static int sh_msiof_prepare_message(struct spi_master *master,
 	}
 
 	printk("file %s func %s line %d ss %d cs_high %d ", __FILE__, __FUNCTION__, __LINE__, ss, cs_high);
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	sh_msiof_spi_set_pin_regs(p, ss, !!(spi->mode & SPI_CPOL),
 				  !!(spi->mode & SPI_CPHA),
 				  !!(spi->mode & SPI_3WIRE),
 				  !!(spi->mode & SPI_LSB_FIRST), cs_high);
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	return 0;
 }
 
@@ -935,17 +942,24 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
 	sh_msiof_write(p, FCTR, 0);
 
 	/* setup msiof transfer mode registers */
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	sh_msiof_spi_set_mode_regs(p, tx_buf, rx_buf, bits, words);
+	sh_msiof_read_reg_inf(p);
 	sh_msiof_write(p, IER, IER_TEOFE | IER_REOFE);
+	sh_msiof_read_reg_inf(p);
 
 	/* write tx fifo */
 	if (tx_buf)
 		tx_fifo(p, tx_buf, words, fifo_shift);
-
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	reinit_completion(&p->done);
 	p->slave_aborted = false;
 
 	ret = sh_msiof_spi_start(p, rx_buf);
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	if (ret) {
 		dev_err(&p->pdev->dev, "failed to start hardware\n");
 		goto stop_ier;
@@ -959,16 +973,19 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
 	/* read rx fifo */
 	if (rx_buf)
 		rx_fifo(p, rx_buf, words, fifo_shift);
-
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	/* clear status bits */
 	sh_msiof_reset_str(p);
-
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	ret = sh_msiof_spi_stop(p, rx_buf);
 	if (ret) {
 		dev_err(&p->pdev->dev, "failed to shut down hardware\n");
 		return ret;
 	}
-
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 	return words;
 
 stop_reset:
@@ -1989,6 +2006,9 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "unable to request irq\n");
 		goto err1;
 	}
+
+	h_debug;
+	sh_msiof_read_reg_inf(p);
 
 	p->pdev = pdev;
 	pm_runtime_enable(&pdev->dev);
