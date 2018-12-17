@@ -1230,6 +1230,8 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	return 0;
 }
 
+static int n_transfer_one;
+
 static int sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
@@ -1238,6 +1240,23 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 	void (*copy32)(u32 *, const u32 *, unsigned int);
 	void (*tx_fifo)(struct sh_msiof_spi_priv *, const void *, int, int);
 	void (*rx_fifo)(struct sh_msiof_spi_priv *, void *, int, int);
+
+	n_transfer_one ++;
+
+	if(n_transfer_one >= 7)
+	{
+		unsigned int t_len = 80;
+		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
+		for (i = 0; i < t_len; i++)
+		{
+			data_t[i] = 0x00 + i;
+		};
+
+		t->len = t_len;
+		t->tx_buf = data_t;
+	}
+
+
 	const void *tx_buf = t->tx_buf;
 	void *rx_buf = t->rx_buf;
 	unsigned int len = t->len;
@@ -1248,20 +1267,23 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 	bool swab;
 	int ret;
 
+	unsigned int j = 0;
+
 	h_pm_test ++;
-	printk("file %s func %s line %d h_pm_test %d\n t->len %d  bits %d sizeof(int) %d sizeof(unsigned long) %d sizeof(char) %d  sizeof(u8) %d",
-				__FILE__, __FUNCTION__, __LINE__, h_pm_test, t->len, bits, sizeof(int), sizeof(unsigned long), sizeof(char), sizeof(u8));
+	printk("file %s func %s line %d h_pm_test %d\n t->len %d  bits %d sizeof(int) %d sizeof(unsigned long) %d sizeof(char) %d  sizeof(u8) %d n_transfer_one %d",
+				__FILE__, __FUNCTION__, __LINE__, h_pm_test, t->len, bits, sizeof(int), sizeof(unsigned long), sizeof(char), sizeof(u8), n_transfer_one);
 	/* setup clocks (clock already enabled in chipselect()) */
 	if (!spi_controller_is_slave(p->master))
 		sh_msiof_spi_set_clk_regs(p, clk_get_rate(p->clk), t->speed_hz);
-
-
 
 	unsigned int sz_tx = sizeof(*tx_buf);
 
 	u8* spi_data = tx_buf;
 
-	printk("file %s func %s line %d sz_tx %d", __FILE__, __FUNCTION__, __LINE__, sz_tx);
+	for(j = 0; j < len; j ++)
+	{
+		printk("tx_buf[%d] %x", j, spi_data[j] );
+	}
 
 	switch (t->len){
 
