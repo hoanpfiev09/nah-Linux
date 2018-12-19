@@ -937,6 +937,7 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
 
 	/* the fifo contents need shifting */
 	fifo_shift = 32 - bits;
+	printk("file %s func %s line %d bits %d fifo_shift %d", __FILE__, __FUNCTION__, __LINE__, bits,  fifo_shift);
 
 	/* default FIFO watermarks for PIO */
 	sh_msiof_write(p, FCTR, 0);
@@ -1245,7 +1246,7 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 
 	if(n_transfer_one >= 7)
 	{
-		unsigned int t_len = 80;
+		unsigned int t_len = 67;
 		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
 		for (i = 0; i < t_len; i++)
 		{
@@ -1350,9 +1351,11 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 //			return 0;
 //	}
 
+	printk("file %s func %s line %d if (bits <= 8 && %d > 3 && !(%d & 3) %d", __FILE__,__FUNCTION__, __LINE__, len, len, bits <= 8 && len > 3 && !(len & 3));
 	if (bits <= 8 && len > 15 && !(len & 3)) {
 		bits = 32;
 		swab = true;
+		h_debug;
 	} else {
 		swab = false;
 	}
@@ -1414,53 +1417,6 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 		if (rx_buf)
 			rx_buf += n * bytes_per_word;
 		words -= n;
-	}
-
-
-	if(h_pm_test > 10)
-	{
-		u32 reg_val;
-
-		printk("file %s func %s line %d p->mapbase %x p->pdev->name %s", __FILE__, __FUNCTION__, __LINE__, p->mapbase, p->pdev->name);
-		/*Config TMDR1*/
-		sh_msiof_write(p, TMDR1, 0xe2000005);
-
-		/*Config RMDR1*/
-		sh_msiof_write(p, RMDR1, 0x22000000);
-
-		/*Config CTR*/
-		sh_msiof_write(p, CTR  , 0xac000000);
-
-		/*Config TSCR*/
-		sh_msiof_write(p, TSCR , 0x1004);
-
-		/*Config FCTR*/
-		sh_msiof_write(p, FCTR , 0x00);
-
-		/*Config TMDR2*/
-		sh_msiof_write(p, TMDR2 ,0x07000000); 		//Select Data size is 8 bits.
-
-		/*Config IER We are enable only TEOFE and REOFE*/
-		/*TEOFE: Khi truyền xong 1 frame thì ngắt*/
-		/*REOFE: Khi nhận  xong 1 frame thì ngắt*/
-		sh_msiof_write(p, IER , 0x00800080);
-
-		/*Config TFDR*/
-		sh_msiof_write(p, TFDR , 0xef000000);
-
-		/*Config CTR*/
-		sh_msiof_write(p, CTR , 0xac00c200);
-
-		/*Idle for transmit end and update STR*/
-		reg_val = sh_msiof_read(p, STR);
-		//while(!(reg_val & STR_TEOF)){;}
-
-		sh_msiof_write(p, STR , reg_val);
-
-		/*Config CTR for stop*/
-
-		sh_msiof_write(p, CTR , 0x03);
-
 	}
 
 	return 0;
