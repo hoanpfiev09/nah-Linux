@@ -1244,18 +1244,18 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 
 	n_transfer_one ++;
 
-	if(n_transfer_one >= 7)
-	{
-		unsigned int t_len = 193;
-		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
-		for (i = 0; i < t_len; i++)
-		{
-			data_t[i] = 0x00 + i;
-		};
-
-		t->len = t_len;
-		t->tx_buf = data_t;
-	}
+//	if(n_transfer_one >= 7)
+//	{
+//		unsigned int t_len = 193;
+//		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
+//		for (i = 0; i < t_len; i++)
+//		{
+//			data_t[i] = 0x00 + i;
+//		};
+//
+//		t->len = t_len;
+//		t->tx_buf = data_t;
+//	}
 
 
 	const void *tx_buf = t->tx_buf;
@@ -1419,6 +1419,7 @@ static int sh_msiof_transfer_one(struct spi_master *master,
 
 		if (words == 0 && (len % bytes_per_word)) {
 			words = len % bytes_per_word;
+			bits = t->bits_per_word;
 			bytes_per_word = 1;
 			tx_fifo = sh_msiof_spi_write_fifo_8;
 			rx_fifo = sh_msiof_spi_read_fifo_8;
