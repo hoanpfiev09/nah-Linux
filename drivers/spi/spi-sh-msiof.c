@@ -422,6 +422,41 @@ static int h_sh_msiof_transfer_bytes(struct rcar_sh_msiof_priv *p, u8 *data)
 	return 0;
 }
 static int n_transfer_one;
+
+static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int bytes)
+{
+	u32 tmp_TMDR2 = 0;
+	u32 d_wrfifo = 0;
+	u32 tmp_STR;
+	unsigned int i;
+
+	printk("file %s func %s line %d bytes %d", __FILE__, __FUNCTION__, __LINE__, bytes);
+	tmp_TMDR2 = h_sh_msiof_read(p, TMDR2);
+	tmp_TMDR2 |= ((bytes - 1) << 16);
+	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
+	for (i = 0; i < bytes; i++)
+	{
+		d_wrfifo |= data[i] << 24;
+		h_sh_msiof_write(p, TFDR , d_wrfifo);
+	}
+
+	h_sh_msiof_write(p, CTR , 0xac00c200);
+	udelay(1000);
+	tmp_STR = h_sh_msiof_read(p, STR);
+	/* wait for complete */
+//	while(!(tmp_STR & STR_TEOF))
+//	{
+//		//printk("file %s func %s line %d STR %x tmp_STR %x tmp_STR && STR_TEOF %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, STR), tmp_STR, h_sh_msiof_read(p, STR) & STR_TEOF);
+//		tmp_STR = h_sh_msiof_read(p, STR);
+//	}
+
+	/*Clear status*/
+	h_sh_msiof_write(p, STR , tmp_STR);
+	h_sh_msiof_write(p, CTR , 0xac000000);
+	h_sh_msiof_write(p, CTR , 0x03);
+	return 0;
+}
+
 static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
