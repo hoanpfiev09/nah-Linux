@@ -51,6 +51,9 @@ struct rcar_sh_msiof_priv {
 	struct clk *clk;
 	struct spi_master	*master;
 	struct platform_device *pdev;
+	struct sh_msiof_spi_info *info;
+	unsigned int tx_fifo_size;
+	unsigned int rx_fifo_size;
 
 	struct completion done;
 
@@ -418,19 +421,35 @@ static int h_sh_msiof_transfer_bytes(struct rcar_sh_msiof_priv *p, u8 *data)
 	h_sh_msiof_write(p, TFDR , d_wrfifo);
 	return 0;
 }
-
+static int n_transfer_one;
 static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_device *spi,
 				 struct spi_transfer *t)
 {
 
+	n_transfer_one ++;
+	if(n_transfer_one >= 7)
+	{
+		unsigned int t_len = 63;
+		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
+		for (i = 0; i < t_len; i++)
+		{
+			data_t[i] = 0x00 + i;
+		};
+
+		t->len = t_len;
+		t->tx_buf = data_t;
+	}
+
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
-	u8 *data = t->tx_buf;
+	unsigned int bits = t->bits_per_word;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	unsigned int i = 0;
 	u32 tmp_TMDR2 = 0;
+
+	u8 *data = t->tx_buf;
 
 	// Configure Clock
 	h_sh_msiof_write(p, TSCR, 0x1004);
@@ -444,6 +463,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
+	printk("file %s func %s line %d n_transfer_one %d p->tx_fifo_size %d", __FILE__, __FUNCTION__, __LINE__, n_transfer_one, p->tx_fifo_size);
 	for (i = 0; i < n_words; i++)
 	{
 		//unsigned int nbytes = 4;
@@ -657,10 +677,19 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	struct rcar_sh_msiof_priv *priv;
 	struct device *dev = &pdev->dev;
 	struct resource *res;
+	const struct sh_msiof_chipdata *chipdata;
+	struct sh_msiof_spi_info *info;
 	int i;
 	int ret;
 
 	h_debug;
+
+	chipdata = of_device_get_match_data(&pdev->dev);
+	if (chipdata) {
+		info = sh_msiof_spi_parse_dt(&pdev->dev);
+	}
+
+
 	master = spi_alloc_master(&pdev->dev, sizeof(*priv));
 	if (!master)
 		return -ENOMEM;
@@ -674,6 +703,11 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	priv->mapbase = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(priv->mapbase))
 		return PTR_ERR(priv->mapbase);
+
+	priv->info = info;
+
+	priv->tx_fifo_size = chipdata->tx_fifo_size;
+	priv->rx_fifo_size = chipdata->rx_fifo_size;
 
 	i = platform_get_irq(pdev, 0);
 	if (i < 0) {
