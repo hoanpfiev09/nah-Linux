@@ -462,6 +462,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_transfer *t)
 {
 
+	unsigned int i = 0;
 	n_transfer_one ++;
 	if(n_transfer_one >= 7)
 	{
@@ -481,7 +482,6 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	const void *tx_buf = t->tx_buf;
 	unsigned int bits = t->bits_per_word;
 	unsigned int sz_tx = sizeof(*tx_buf);
-	unsigned int i = 0;
 	u32 tmp_TMDR2 = 0;
 
 	u8 *data = t->tx_buf;
