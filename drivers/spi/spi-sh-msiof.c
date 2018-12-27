@@ -423,6 +423,13 @@ static int h_sh_msiof_transfer_bytes(struct rcar_sh_msiof_priv *p, u8 *data)
 }
 static int n_transfer_one;
 
+static int h_sh_msiof_write_to_fifo8(struct rcar_sh_msiof_priv *p, u8 *data, int bytes)
+{
+	unsigned int i;
+	u32 d_wrfifo = 0;
+
+}
+
 static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int bytes)
 {
 	u32 tmp_TMDR2 = 0;
@@ -432,11 +439,14 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int 
 
 	printk("file %s func %s line %d bytes %d", __FILE__, __FUNCTION__, __LINE__, bytes);
 	tmp_TMDR2 = h_sh_msiof_read(p, TMDR2);
+	/* Clear  WDLEN1[7:0] and resetting these bits*/
+	tmp_TMDR2 &= ~(255 << 16);
 	tmp_TMDR2 |= ((bytes - 1) << 16);
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
+
 	for (i = 0; i < bytes; i++)
 	{
-		d_wrfifo |= data[i] << 24;
+		d_wrfifo = data[i] << 24;
 		h_sh_msiof_write(p, TFDR , d_wrfifo);
 	}
 
@@ -444,16 +454,22 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int 
 	udelay(1000);
 	tmp_STR = h_sh_msiof_read(p, STR);
 	/* wait for complete */
-//	while(!(tmp_STR & STR_TEOF))
-//	{
-//		//printk("file %s func %s line %d STR %x tmp_STR %x tmp_STR && STR_TEOF %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, STR), tmp_STR, h_sh_msiof_read(p, STR) & STR_TEOF);
-//		tmp_STR = h_sh_msiof_read(p, STR);
-//	}
+	for (i = 100; i > 0; i--) {
+		tmp_STR = h_sh_msiof_read(p, STR);
+		if(tmp_STR & STR_TEOF)
+			break;
+		udelay(10);
+	}
 
+	if(!(i > 0))
+		printk("file %s func %s line %d err timeout", __FILE__, __FUNCTION__, __LINE__);
+
+	h_sh_msiof_read_reg_inf(p);
 	/*Clear status*/
 	h_sh_msiof_write(p, STR , tmp_STR);
 	h_sh_msiof_write(p, CTR , 0xac000000);
-	h_sh_msiof_write(p, CTR , 0x03);
+	h_sh_msiof_write(p, CTR , 0xac000003);
+
 	return 0;
 }
 
@@ -466,7 +482,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	n_transfer_one ++;
 	if(n_transfer_one >= 7)
 	{
-		unsigned int t_len = 63;
+		unsigned int t_len = 257;
 		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
 		for (i = 0; i < t_len; i++)
 		{
@@ -498,40 +514,14 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
-	printk("file %s func %s line %d n_transfer_one %d p->tx_fifo_size %d", __FILE__, __FUNCTION__, __LINE__, n_transfer_one, p->tx_fifo_size);
-	for (i = 0; i < n_words; i++)
+	for (i = 0; i < n_words / 64; i++)
 	{
-		//unsigned int nbytes = 4;
-		//if(i == (n_words -1))
-		//	nbytes = (len % 4)? : nbytes;
-		//printk("file %s func %s line %d nbytes %d n_words %d", __FILE__, __FUNCTION__, __LINE__, nbytes, n_words);
-		//h_sh_msiof_transfer_word(p, &data[i * 4], nbytes);
-		h_sh_msiof_transfer_bytes(p, &data[i]);
-	}
-	h_sh_msiof_write(p, CTR , 0xac00c200);
-
-	//Wait for transfer OK
-	u32 tmp_STR = h_sh_msiof_read(p, STR);
-//	for(;;)
-//	{
-//		if(h_sh_msiof_read(p, STR) & STR_TEOF) break;
-//	}
-//	do {
-//		tmp_STR = h_sh_msiof_read(p, STR);
-//	}while	(!(tmp_STR & STR_TEOF));
-
-	while(!(tmp_STR & STR_TEOF))
-	{
-		//printk("file %s func %s line %d STR %x tmp_STR %x tmp_STR && STR_TEOF %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, STR), tmp_STR, h_sh_msiof_read(p, STR) & STR_TEOF);
-		tmp_STR = h_sh_msiof_read(p, STR);
+		h_sh_msiof_transfer_once(p, data, 64);
+		data += 64;
 	}
 
-	/*Clear status*/
-	h_sh_msiof_write(p, STR , tmp_STR);
-
-	h_sh_msiof_write(p, CTR , 0xac000000);
-
-	h_sh_msiof_write(p, CTR , 0x03);
+	if (n_words % 64)
+		h_sh_msiof_transfer_once(p, data, n_words % 64);
 
 	return 0;
 }
