@@ -602,6 +602,34 @@ static struct sh_msiof_spi_info *sh_msiof_spi_parse_dt(struct device *dev)
 }
 #endif
 
+
+static int h_sh_msiof_get_cs_gpios(struct rcar_sh_msiof_priv *p)
+{
+	struct device *dev = &p->pdev->dev;
+	unsigned int used_ss_mask = 0;
+	unsigned int cs_gpios = 0;
+	unsigned int num_cs, i;
+	int ret;
+
+	ret = gpiod_count(dev, "cs");
+	if (ret <= 0)
+		return 0;
+
+	num_cs = max_t(unsigned int, ret, p->master->num_chipselect);
+
+	for (i = 0; i < num_cs; i++) {
+		struct gpio_desc *gpiod;
+
+		gpiod = devm_gpiod_get_index(dev, "cs", i, GPIOD_ASIS);
+		if (!IS_ERR(gpiod)) {
+			cs_gpios++;
+			continue;
+		}
+	}
+
+	return 0;
+}
+
 static int fops_incomplete_transfer_set(void *data, u64 addr)
 {
 	struct rcar_sh_msiof_priv *p = data;
@@ -729,10 +757,18 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	if (IS_ERR(priv->mapbase))
 		return PTR_ERR(priv->mapbase);
 
+	priv->pdev = pdev;
 	priv->info = info;
 
 	priv->tx_fifo_size = chipdata->tx_fifo_size;
 	priv->rx_fifo_size = chipdata->rx_fifo_size;
+
+	/* Setup GPIO chip selects */
+	//master->num_chipselect = priv->info->num_chipselect;
+	master->num_chipselect	= 1; /* single chip-select */
+	ret = h_sh_msiof_get_cs_gpios(priv);
+	if (ret)
+		printk("file %s func %s line %d CS error", __FILE__, __FUNCTION__, __LINE__);
 
 	i = platform_get_irq(pdev, 0);
 	if (i < 0) {
@@ -765,7 +801,7 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 	master->dev.of_node	= pdev->dev.of_node;
 	master->mode_bits	= SPI_MODE_3 | SPI_MODE_0 | SPI_CS_HIGH;
 	//	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
-	master->num_chipselect	= 1; /* single chip-select */
+
 	/*
 	master->num_chipselect = p->info->num_chipselect;
 	ret = sh_msiof_get_cs_gpios(p);
