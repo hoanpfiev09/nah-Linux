@@ -430,9 +430,10 @@ static int h_sh_msiof_write_to_fifo8(struct rcar_sh_msiof_priv *p, u8 *data, int
 
 }
 
-static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int bytes)
+static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *tx_data, u8 *rx_data, int bytes)
 {
 	u32 tmp_TMDR2 = 0;
+	u32 tmp_RMDR2 = 0;
 	u32 d_wrfifo = 0;
 	u32 tmp_STR;
 	unsigned int i;
@@ -444,13 +445,22 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int 
 	tmp_TMDR2 |= ((bytes - 1) << 16);
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
+	tmp_RMDR2 = h_sh_msiof_read(p, RMDR2);
+	tmp_RMDR2 &= ~(255 << 16);
+	tmp_RMDR2 |= ((bytes - 1) << 16);
+	h_sh_msiof_write(p, RMDR2, tmp_RMDR2);
+
 	for (i = 0; i < bytes; i++)
 	{
-		d_wrfifo = data[i] << 24;
+		d_wrfifo = tx_data[i] << 24;
 		h_sh_msiof_write(p, TFDR , d_wrfifo);
 	}
 
-	h_sh_msiof_write(p, CTR , 0xac00c200);
+	if(rx_data)
+		h_sh_msiof_write(p, CTR , 0xac00c300);
+	else
+		h_sh_msiof_write(p, CTR , 0xac00c200);
+
 	udelay(1000);
 	tmp_STR = h_sh_msiof_read(p, STR);
 	/* wait for complete */
@@ -463,6 +473,11 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *data, int 
 
 	if(!(i > 0))
 		printk("file %s func %s line %d err timeout", __FILE__, __FUNCTION__, __LINE__);
+
+	if(rx_data) {
+		for (i = 0; i < bytes; i++)
+			rx_data[i] = ((u32)h_sh_msiof_read(p, RFDR)) >> 24;
+	}
 
 	h_sh_msiof_read_reg_inf(p);
 	/*Clear status*/
@@ -480,27 +495,30 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 
 	unsigned int i = 0;
 	n_transfer_one ++;
-	if(n_transfer_one >= 7)
-	{
-		unsigned int t_len = 257;
-		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
-		for (i = 0; i < t_len; i++)
-		{
-			data_t[i] = 0x00 + i;
-		};
-
-		t->len = t_len;
-		t->tx_buf = data_t;
-	}
+//	if(n_transfer_one >= 7)
+//	{
+//		unsigned int t_len = 257;
+//		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
+//		for (i = 0; i < t_len; i++)
+//		{
+//			data_t[i] = 0x00 + i;
+//		};
+//
+//		t->len = t_len;
+//		t->tx_buf = data_t;
+//	}
 
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
+	const void *rx_buf = t->rx_buf;
 	unsigned int bits = t->bits_per_word;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	u32 tmp_TMDR2 = 0;
+	u32 tmp_RMDR2 = 0;
 
-	u8 *data = t->tx_buf;
+	u8 *tx_data = t->tx_buf;
+	u8 *rx_data = t->rx_buf;
 
 	// Configure Clock
 	h_sh_msiof_write(p, TSCR, 0x1004);
@@ -509,19 +527,26 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	//n_words = len / 4 + ((len % 4)? 1 : 0);
 	n_words = len;
 
-	tmp_TMDR2 |= ((n_words - 1) << 16);
+	printk("file %s func %s line %d n_words %d t->len %d *tx_buf %x *rx_buf %x", __FILE__, __FUNCTION__, __LINE__, n_words, t->len, tx_buf, rx_buf);
+
 	unsigned int nbytes = 1;
 	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
 
+	tmp_RMDR2 |= ((nbytes * 8 - 1) << 24);
+	h_sh_msiof_write(p, RMDR2, tmp_RMDR2);
+
 	for (i = 0; i < n_words / 64; i++)
 	{
-		h_sh_msiof_transfer_once(p, data, 64);
-		data += 64;
+		h_sh_msiof_transfer_once(p, tx_data, rx_data, 64);
+		tx_data += 64;
+
+		if(rx_data)
+			rx_data += 64;
 	}
 
 	if (n_words % 64)
-		h_sh_msiof_transfer_once(p, data, n_words % 64);
+		h_sh_msiof_transfer_once(p, tx_data, rx_data, n_words % 64);
 
 	return 0;
 }
