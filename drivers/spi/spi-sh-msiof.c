@@ -262,6 +262,12 @@ static irqreturn_t sh_msiof_spi_irq(int irq, void *data)
 
 static irqreturn_t h_sh_msiof_spi_irq(int irq, void *data)
 {
+	struct sh_msiof_spi_priv *p = data;
+	u32 val_reg;
+
+	h_sh_msiof_write(p, STR, h_sh_msiof_read(p, STR) &
+			(STR_TEOF | STR_REOF));
+
 	return IRQ_HANDLED;
 }
 
@@ -449,6 +455,8 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *tx_data, u
 	tmp_RMDR2 &= ~(255 << 16);
 	tmp_RMDR2 |= ((bytes - 1) << 16);
 	h_sh_msiof_write(p, RMDR2, tmp_RMDR2);
+
+	h_sh_msiof_write(p, IER, IER_TEOFE | IER_REOFE);
 
 	for (i = 0; i < bytes; i++)
 	{
