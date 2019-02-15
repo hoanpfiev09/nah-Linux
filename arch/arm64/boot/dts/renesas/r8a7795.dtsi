@@ -1298,8 +1298,8 @@
 		};
 
 		scif1: serial@e6e68000 {
-			compatible = "renesas,scif-r8a7795",
-				     "renesas,rcar-gen3-scif", "renesas,scif";
+			compatible = "renesas,hoan-scif-r8a7795",
+				     "renesas,hoan-rcar-gen3-scif", "renesas,hoan-scif";
 			reg = <0 0xe6e68000 0 64>;
 			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&cpg CPG_MOD 206>,
