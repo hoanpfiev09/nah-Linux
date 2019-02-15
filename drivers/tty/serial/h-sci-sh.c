@@ -3108,10 +3108,8 @@ static const char banner[] __initconst = "SuperH (H)SCI(F) driver initialized";
 static DEFINE_MUTEX(sci_uart_registration_lock);
 static struct uart_driver sci_uart_driver = {
 	.owner		= THIS_MODULE,
-	.driver_name	= "sci",
+	.driver_name	= "hsci",
 	.dev_name	= "ttyHSCI",
-	.major		= SCI_MAJOR,
-	.minor		= SCI_MINOR_START,
 	.nr		= SCI_NPORTS,
 	.cons		= SCI_CONSOLE,
 };
