@@ -61,22 +61,17 @@
 
 /* Offsets into the sci_port->irqs array */
 enum {
-	SCIx_ERI_IRQ,
-	SCIx_RXI_IRQ,
-	SCIx_TXI_IRQ,
-	SCIx_BRI_IRQ,
-	SCIx_DRI_IRQ,
-	SCIx_TEI_IRQ,
+
 	SCIx_NR_IRQS,
 
 	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
 };
 
-#define SCIx_IRQ_IS_MUXED(port)			\
-	((port)->irqs[SCIx_ERI_IRQ] ==	\
-	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
-	((port)->irqs[SCIx_ERI_IRQ] &&	\
-	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
+//#define SCIx_IRQ_IS_MUXED(port)			\
+//	((port)->irqs[SCIx_ERI_IRQ] ==	\
+//	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
+//	((port)->irqs[SCIx_ERI_IRQ] &&	\
+//	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
 
 enum SCI_CLKS {
 	SCI_FCK,		/* Functional Clock */
@@ -1240,7 +1235,7 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
 	struct sci_port *s = to_sci_port(port);
 
 	h_debug;
-	if (s->irqs[SCIx_ERI_IRQ] == s->irqs[SCIx_BRI_IRQ]) {
+	//if (s->irqs[SCIx_ERI_IRQ] == s->irqs[SCIx_BRI_IRQ]) {
 		/* Break and Error interrupts are muxed */
 		unsigned short ssr_status = serial_port_in(port, SCxSR);
 
@@ -1251,7 +1246,7 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
 		/* Break only? */
 		if (!(ssr_status & SCxSR_ERRORS(port)))
 			return IRQ_HANDLED;
-	}
+	//}
 
 	/* Handle errors */
 	if (port->type == PORT_SCI) {
@@ -1326,38 +1321,6 @@ static const struct sci_irq_desc {
 	const char	*desc;
 	irq_handler_t	handler;
 } sci_irq_desc[] = {
-	/*
-	 * Split out handlers, the default case.
-	 */
-	[SCIx_ERI_IRQ] = {
-		.desc = "rx err",
-		.handler = sci_er_interrupt,
-	},
-
-	[SCIx_RXI_IRQ] = {
-		.desc = "rx full",
-		.handler = sci_rx_interrupt,
-	},
-
-	[SCIx_TXI_IRQ] = {
-		.desc = "tx empty",
-		.handler = sci_tx_interrupt,
-	},
-
-	[SCIx_BRI_IRQ] = {
-		.desc = "break",
-		.handler = sci_br_interrupt,
-	},
-
-	[SCIx_DRI_IRQ] = {
-		.desc = "rx ready",
-		.handler = sci_rx_interrupt,
-	},
-
-	[SCIx_TEI_IRQ] = {
-		.desc = "tx end",
-		.handler = sci_tx_interrupt,
-	},
 
 	/*
 	 * Special muxed handler.
@@ -1374,46 +1337,11 @@ static int sci_request_irq(struct sci_port *port)
 	int i, j, w, ret = 0;
 
 	h_debug;
-	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
-		const struct sci_irq_desc *desc;
-		int irq;
 
-		/* Check if already registered (muxed) */
-		for (w = 0; w < i; w++)
-			if (port->irqs[w] == port->irqs[i])
-				w = i + 1;
-		if (w > i)
-			continue;
+	const struct sci_irq_desc *desc = &sci_irq_desc[0];
 
-		if (SCIx_IRQ_IS_MUXED(port)) {
-			i = SCIx_MUX_IRQ;
-			irq = up->irq;
-		} else {
-			irq = port->irqs[i];
-
-			/*
-			 * Certain port types won't support all of the
-			 * available interrupt sources.
-			 */
-			if (unlikely(irq < 0))
-				continue;
-		}
-
-		desc = sci_irq_desc + i;
-		port->irqstr[j] = kasprintf(GFP_KERNEL, "%s:%s",
-					    dev_name(up->dev), desc->desc);
-		if (!port->irqstr[j]) {
-			ret = -ENOMEM;
-			goto out_nomem;
-		}
-
-		ret = request_irq(irq, desc->handler, up->irqflags,
-				  port->irqstr[j], port);
-		if (unlikely(ret)) {
-			dev_err(up->dev, "Can't allocate %s IRQ\n", desc->desc);
-			goto out_noirq;
-		}
-	}
+	ret = request_irq(up->irq , desc->handler, up->irqflags,
+					port->irqstr[j], port);
 
 	return 0;
 
@@ -1457,10 +1385,10 @@ static void sci_free_irq(struct sci_port *port)
 		free_irq(port->irqs[i], port);
 		kfree(port->irqstr[i]);
 
-		if (SCIx_IRQ_IS_MUXED(port)) {
-			/* If there's only one IRQ, we're done. */
-			return;
-		}
+//		if (SCIx_IRQ_IS_MUXED(port)) {
+//			/* If there's only one IRQ, we're done. */
+//			return;
+//		}
 	}
 }
 
@@ -1872,14 +1800,6 @@ static void funcB(const char* func_name)
 }
 
 #define funcA(void) funcB(__FUNCTION__)
-
-
-
-
-
-
-
-
 
 
 
@@ -2458,8 +2378,17 @@ static int sci_init_single(struct platform_device *dev,
 	port->mapbase = res->start;
 	sci_port->reg_size = resource_size(res);
 
-	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-		sci_port->irqs[i] = platform_get_irq(dev, i);
+//	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
+//		sci_port->irqs[i] = platform_get_irq(dev, i);
+
+	i = platform_get_irq(dev, 0);
+	if (i < 0) {
+		dev_err(&dev->dev, "cannot get IRQ\n");
+		ret = i;
+		return ret;
+	}
+
+	sci_port->irqs[0] = i;
 
 	/* The SCI generates several interrupts. They can be muxed together or
 	 * connected to different interrupt lines. In the muxed case only one
@@ -2468,12 +2397,12 @@ static int sci_init_single(struct platform_device *dev,
 	 * from the SCI, however those signals might have their own individual
 	 * interrupt ID numbers, or muxed together with another interrupt.
 	 */
-	if (sci_port->irqs[0] < 0)
-		return -ENXIO;
-
-	if (sci_port->irqs[1] < 0)
-		for (i = 1; i < ARRAY_SIZE(sci_port->irqs); i++)
-			sci_port->irqs[i] = sci_port->irqs[0];
+//	if (sci_port->irqs[0] < 0)
+//		return -ENXIO;
+//
+//	if (sci_port->irqs[1] < 0)
+//		for (i = 1; i < ARRAY_SIZE(sci_port->irqs); i++)
+//			sci_port->irqs[i] = sci_port->irqs[0];
 
 	sci_port->params = sci_probe_regmap(p);
 	if (unlikely(sci_port->params == NULL))
@@ -2540,7 +2469,7 @@ static int sci_init_single(struct platform_device *dev,
 	 *
 	 * For the muxed case there's nothing more to do.
 	 */
-	port->irq		= sci_port->irqs[SCIx_RXI_IRQ];
+	port->irq		= sci_port->irqs[0];
 	port->irqflags		= 0;
 
 	port->serial_in		= sci_serial_in;
