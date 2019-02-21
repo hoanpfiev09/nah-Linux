@@ -531,7 +531,7 @@ static void sci_port_enable(struct sci_port *sci_port)
 {
 	unsigned int i;
 
-	h_debug;
+	//h_debug;
 
 	sci_serial_read_regs(&sci_port->port);
 
@@ -1190,7 +1190,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
 	struct sci_port *s = to_sci_port(port);
 
 	h_debug;
-	sci_serial_read_regs(port);
+	//sci_serial_read_regs(port);
 
 	if (s->rx_trigger > 1 && s->rx_fifo_timeout > 0) {
 		if (!scif_rtrg_enabled(port))
