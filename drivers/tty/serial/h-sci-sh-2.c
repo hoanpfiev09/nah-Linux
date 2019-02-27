@@ -357,6 +357,7 @@ static int h_sh_sci_uart_request_port(struct uart_port* port)
 static void h_sh_sci_uart_config_port(struct uart_port* port, int val)
 {
 	h_debug;
+	port->type = PORT_SCIF;
 	return ;
 }
 
