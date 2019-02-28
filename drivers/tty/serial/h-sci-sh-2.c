@@ -184,9 +184,17 @@ struct sci_port {
 	int idx;
 
 	struct clk		*clks;
+	int irq;
 	struct device *dev;
 
 };
+
+static inline struct sci_port *
+to_sci_port(struct uart_port *uart)
+{
+	return container_of(uart, struct sci_port, port);
+}
+
 
 #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
 static struct sci_port sci_ports[SCI_NPORTS];
@@ -308,12 +316,52 @@ static void h_sh_sci_uart_break_ctl(struct uart_port* port, int ctl)
 	return;
 }
 
+static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+{
+	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
+	struct uart_port *port = ptr;
+	struct sci_port *s = to_sci_port(port);
+	irqreturn_t ret = IRQ_NONE;
+
+	return ret;
+}
+
+static const struct sci_irq_desc {
+	const char	*desc;
+	irq_handler_t	handler;
+} h_irq_desc = {
+  .desc = "h-sci-irq",
+  .handler = sci_mpxed_interrupt,
+};
+
+
+static int h_sci_request_irq(struct sci_port *sp)
+{
+	struct uart_port *port = &sp->port;
+	int i, j, w, ret = 0;
+
+	h_debug;
+
+	const struct sci_irq_desc *desc = &h_irq_desc;
+
+	ret = request_irq(port->irq , desc->handler, port->irqflags,
+			desc->desc, port);
+
+	return ret;
+}
 
 static int h_sh_sci_uart_startup(struct uart_port* port)
 {
 	int ret = 0;
-
+	struct sci_port *sp = to_sci_port(port);
 	h_debug;
+
+	ret = h_sci_request_irq(sp);
+	if (unlikely(ret < 0)) {
+
+		return ret;
+	}
+
 	return ret;
 }
 
@@ -407,7 +455,7 @@ static int h_sh_sci_probe(struct platform_device *pdev)
 	int uart_idx = 0;
 	struct resource *res_mem;
 	struct uart_port *port;
-	int ret;
+	int i, ret;
 	u8 reg_val;
 
 
@@ -472,6 +520,21 @@ static int h_sh_sci_probe(struct platform_device *pdev)
 
 	port->serial_in		= h_sci_serial_in;
 	port->serial_out	= h_sci_serial_out;
+
+	i = platform_get_irq(pdev, 0);
+	if (i < 0) {
+		dev_err(&pdev->dev, "cannot get IRQ\n");
+		ret = i;
+		return ret;
+	}
+
+	sp->irq = i;
+
+	port->irq		= sp->irq;
+	port->irqflags		= 0;
+
+	printk("file %s func %s line %d i %d", __FILE__, __FUNCTION__, __LINE__, i);
+
 
 
 	return 0;
