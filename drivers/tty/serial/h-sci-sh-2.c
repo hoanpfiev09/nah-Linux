@@ -258,12 +258,37 @@ static int h_sci_get_size_regs(int reg)
 }
 static void h_sci_serial_out(struct uart_port* port, int reg , int val)
 {
+	int regs_size;
 
+	regs_size = h_sci_get_size_regs(reg);
+	switch (regs_size){
+	case 8:
+		iowrite8(val, port->membase + reg);
+		break;
+	case 16:
+		iowrite16(val, port->membase + reg);
+	default:
+		printk("cannot access registers");
+		break;
+	}
 }
 
 static unsigned int h_sci_serial_in(struct uart_port* port, int reg)
 {
 	unsigned int ret;
+	int regs_size;
+
+	regs_size = h_sci_get_size_regs(reg);
+	switch (regs_size){
+	case 8:
+		ret = ioread8(port->membase + reg);
+		break;
+	case 16:
+		ret = ioread16(port->membase + reg);
+	default:
+		printk("cannot access registers");
+		break;
+	}
 
 	return ret;
 }
