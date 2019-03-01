@@ -535,10 +535,14 @@ static void sci_port_enable(struct sci_port *sci_port)
 
 	pm_runtime_get_sync(sci_port->port.dev);
 
+	sci_serial_read_regs(&sci_port->port);
+
 	for (i = 0; i < SCI_NUM_CLKS; i++) {
 		clk_prepare_enable(sci_port->clks[i]);
 		sci_port->clk_rates[i] = clk_get_rate(sci_port->clks[i]);
 	}
+
+	sci_serial_read_regs(&sci_port->port);
 	sci_port->port.uartclk = sci_port->clk_rates[SCI_FCK];
 }
 
@@ -611,11 +615,12 @@ static void sci_start_rx(struct uart_port *port)
 
 	h_debug;
 	ctrl = serial_port_in(port, SCSCR) | port_rx_irq_mask(port);
-
+	h_debug;
 	if (port->type == PORT_SCIFA || port->type == PORT_SCIFB)
 		ctrl &= ~SCSCR_RDRQE;
 
 	serial_port_out(port, SCSCR, ctrl);
+	h_debug;
 }
 
 static void sci_stop_rx(struct uart_port *port)
@@ -1830,6 +1835,10 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
 	if (termios->c_cflag & CSTOPB)
 		smr_val |= SCSMR_STOP;
 
+	printk("file %s func %s line %d termios->c_cflag %x CSIZE %x CS7 %x PARENB %x PARODD %x CSTOPB %x termios->c_cflag & CSIZE %d \n "
+			"termios->c_cflag & PARENB %d termios->c_cflag & PARODD %d termios->c_cflag & CSTOPB %d",
+			__FILE__, __FUNCTION__, __LINE__, termios->c_cflag, CSIZE, CS7, PARENB, PARODD, CSTOPB, termios->c_cflag & CSIZE, termios->c_cflag & PARENB, termios->c_cflag & PARODD, termios->c_cflag & CSTOPB);
+
 	/*
 	 * earlyprintk comes here early on with port->uartclk set to zero.
 	 * the clock framework is not up and running at this point so here
@@ -2060,6 +2069,55 @@ done:
 	 * is smaller than 20ms, use 20ms as the timeout value for DMA.
 	 */
 	s->rx_frame = (10000 * bits) / (baud / 100);
+
+//# stty -F /dev/ttyHSCI1 speed 9600 cs8 -cstopb
+//
+//	for (i = 0; i < SCI_NUM_CLKS; i++)
+//		max_freq = max(max_freq, s->clk_rates[i]);
+//
+//
+//		if (!port->uartclk) {
+//			baud = uart_get_baud_rate(port, termios, old, 0, 115200);
+//			return;
+//		}
+//
+//		baud = uart_get_baud_rate(port, termios, old, 0, max_freq / min_sr(s));
+//
+//		if (!baud)
+//			return;
+//
+//	sci_port_enable(s);
+//
+//	spin_lock_irqsave(&port->lock, flags);
+//
+//	sci_reset(port);
+//
+//	uart_update_timeout(port, termios->c_cflag, baud);
+//
+//	sci_init_pins(port, termios->c_cflag);
+//	port->status &= ~UPSTAT_AUTOCTS;
+//	s->autorts = false;
+//
+//			if ((port->flags & UPF_HARD_FLOW) &&
+//			    (termios->c_cflag & CRTSCTS)) {
+//				/* There is no CTS interrupt to restart the hardware */
+//				port->status |= UPSTAT_AUTOCTS;
+//				/* MCE is enabled when RTS is raised */
+//				s->autorts = true;
+//			}
+//
+//	serial_port_out(port, SCSMR, 0);
+//	serial_port_out(port, SCBRR, 0xff);
+//	serial_port_out(port, SCSCR, 0x32);
+//	serial_port_out(port, SCxSR, 60);
+//	serial_port_out(port, SCxTDR, 0);
+//	serial_port_out(port, SCxRDR, 0);
+//	serial_port_out(port, SCFCR, 0);
+//	serial_port_out(port, SCFDR, 0);
+//	serial_port_out(port, SCSPTR, 0xd5);
+//	serial_port_out(port, SCLSR, 0);
+//	serial_port_out(port, SCDL, 0x60);
+//	serial_port_out(port, SCCKS, 0);
 
 	sci_serial_read_regs(port);
 
