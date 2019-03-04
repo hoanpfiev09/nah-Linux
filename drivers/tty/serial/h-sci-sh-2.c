@@ -331,7 +331,6 @@ static void h_sh_sci_uart_stop_tx(struct uart_port* port)
 static void h_sh_sci_uart_stop_rx(struct uart_port* port)
 {
 	h_debug;
-	return ;
 }
 
 
@@ -346,7 +345,9 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
 	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
 	struct uart_port *port = ptr;
 	struct sci_port *s = to_sci_port(port);
-	irqreturn_t ret = IRQ_NONE;
+	irqreturn_t ret = IRQ_HANDLED;
+
+	h_debug;
 
 	return ret;
 }
@@ -355,7 +356,7 @@ static const struct sci_irq_desc {
 	const char	*desc;
 	irq_handler_t	handler;
 } h_irq_desc = {
-  .desc = "h-sci-irq",
+  .desc = "hsci",
   .handler = sci_mpxed_interrupt,
 };
 
@@ -369,6 +370,7 @@ static int h_sci_request_irq(struct sci_port *sp)
 
 	const struct sci_irq_desc *desc = &h_irq_desc;
 
+	printk("file %s func %s line %d port->irq %d port->irqflags %d", __FILE__, __FUNCTION__, __LINE__, port->irq, port->irqflags);
 	ret = request_irq(port->irq , desc->handler, port->irqflags,
 			desc->desc, port);
 
@@ -382,12 +384,14 @@ static int h_sh_sci_uart_startup(struct uart_port* port)
 	h_debug;
 
 	ret = h_sci_request_irq(sp);
-	if (unlikely(ret < 0)) {
+	printk("file %s func %s line %d ret %d", __FILE__, __FUNCTION__, __LINE__, ret);
 
-		return ret;
-	}
+//	if (unlikely(ret < 0)) {
+//
+//		return ret;
+//	}
 
-	return ret;
+	return 0;
 }
 
 
@@ -395,7 +399,6 @@ static void h_sh_sci_uart_shutdown(struct uart_port* port)
 {
 
 	h_debug;
-	return ;
 }
 
 
@@ -403,6 +406,13 @@ static void h_sh_sci_uart_set_termios(struct uart_port *port, struct ktermios *k
 {
 	h_debug;
 	return ;
+}
+
+static void h_sh_sci_uart_pm(struct uart_port *port, unsigned int state,
+		   unsigned int oldstate)
+{
+	h_debug;
+
 }
 
 static const char* h_sh_sci_uart_type(struct uart_port* port)
@@ -453,6 +463,7 @@ static const struct uart_ops h_sh_sci_uart_ops = {
 	.startup	= h_sh_sci_uart_startup,
 	.shutdown	= h_sh_sci_uart_shutdown,
 	.set_termios	= h_sh_sci_uart_set_termios,
+	.pm		= h_sh_sci_uart_pm,
 	.type		= h_sh_sci_uart_type,
 	.release_port	= h_sh_sci_uart_release_port,
 	.request_port	= h_sh_sci_uart_request_port,
