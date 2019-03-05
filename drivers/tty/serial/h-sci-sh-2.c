@@ -35,7 +35,6 @@
 
 enum SCI_CLKS {
 	SCI_FCK,		/* Functional Clock */
-	SCI_SCK,		/* Optional External Clock */
 	SCI_BRG_INT,		/* Optional BRG Internal Clock Source */
 	SCI_SCIF_CLK,		/* Optional BRG External Clock Source */
 	SCI_NUM_CLKS
@@ -176,6 +175,7 @@ enum SCI_CLKS {
 #define SCCKS_CKS	BIT(15)	/* Select (H)SCK (1) or divided SC_CLK (0) */
 #define SCCKS_XIN	BIT(14)	/* SC_CLK uses bus clock (1) or SCIF_CLK (0) */
 
+
 #define h_debug            printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__);
 
 struct sci_port {
@@ -183,7 +183,7 @@ struct sci_port {
 	struct uart_port port;
 	int idx;
 
-	struct clk		*clks;
+	struct clk		*clks[SCI_NUM_CLKS];
 	int irq;
 	struct device *dev;
 
@@ -261,12 +261,15 @@ static void h_sci_serial_out(struct uart_port* port, int reg , int val)
 	int regs_size;
 
 	regs_size = h_sci_get_size_regs(reg);
+
+	printk("file %s func %s line %d reg %x value %x regs_size %d", __FILE__, __FUNCTION__, __LINE__, reg, val, regs_size);
 	switch (regs_size){
 	case 8:
 		iowrite8(val, port->membase + reg);
 		break;
 	case 16:
 		iowrite16(val, port->membase + reg);
+		break;
 	default:
 		printk("cannot access registers");
 		break;
@@ -285,6 +288,7 @@ static unsigned int h_sci_serial_in(struct uart_port* port, int reg)
 		break;
 	case 16:
 		ret = ioread16(port->membase + reg);
+		break;
 	default:
 		printk("cannot access registers");
 		break;
@@ -292,6 +296,22 @@ static unsigned int h_sci_serial_in(struct uart_port* port, int reg)
 
 	return ret;
 }
+
+static void h_sci_serial_read_regs(struct uart_port *p)
+{
+	printk("func %s SCSMR %x SCBRR %x SCSCR %x SCxSR %x SCxTDR %x SCxRDR %x SCFCR %x SCFDR %x SCSPTR %x SCLSR %x SCDL %x SCCKS %x",
+			__FUNCTION__, serial_port_in(p, SCSMR), serial_port_in(p, SCBRR), serial_port_in(p,SCSCR),serial_port_in(p,SCFSR),serial_port_in(p,SCFTDR),serial_port_in(p,SCFRDR),serial_port_in(p,SCFCR),
+			serial_port_in(p,SCFDR),serial_port_in(p,SCSPTR),serial_port_in(p,SCLSR),serial_port_in(p,SCDL),serial_port_in(p,SCCKS));
+}
+
+static void call_sci_serial_read_regs(struct uart_port *p, const char *file_name, const char *func_name, int line)
+{
+	h_sci_serial_read_regs(p);
+	printk("sci_serial_read_regs() was called by file %s func %s line %d", file_name, func_name, line);
+}
+
+#define h_sci_serial_read_regs(p) call_sci_serial_read_regs(p, __FILE__, __FUNCTION__, __LINE__)
+
 
 static unsigned int h_sh_sci_uart_tx_empty(struct uart_port* port)
 {
@@ -401,17 +421,146 @@ static void h_sh_sci_uart_shutdown(struct uart_port* port)
 	h_debug;
 }
 
-
-static void h_sh_sci_uart_set_termios(struct uart_port *port, struct ktermios *kterm, struct ktermios *old)
+static void h_sh_sci_start_rx(struct uart_port *port)
 {
+	unsigned short ctrl;
+
 	h_debug;
+//	ctrl = serial_port_in(port, SCSCR) | port_rx_irq_mask(port);
+//
+//	printk("file %s func %s line %d ctrl %x", __FILE__, __FUNCTION__, __LINE__);
+//
+//	if (port->type == PORT_SCIFA || port->type == PORT_SCIFB)
+//		ctrl &= ~SCSCR_RDRQE;
+//	printk("file %s func %s line %d ctrl %x", __FILE__, __FUNCTION__, __LINE__);
+
+	ctrl = 0x72;
+	serial_port_out(port, SCSCR, ctrl);
+	h_sci_serial_read_regs(port);
+	h_debug;
+}
+
+static void h_sci_port_enable(struct sci_port *sci_port)
+{
+	unsigned int i;
+
+	//h_debug;
+
+	//h_sci_serial_read_regs(&sci_port->port);
+	pm_runtime_get_sync(sci_port->port.dev);
+	for (i = 0; i < SCI_NUM_CLKS; i++) {
+
+		clk_prepare_enable(sci_port->clks[i]);
+	}
+
+	//sci_port->clk_rates[i] = clk_get_rate(sci_port->clks);
+
+
+	//h_sci_serial_read_regs(&sci_port->port);
+	sci_port->port.uartclk = clk_get_rate(sci_port->clks[SCI_FCK]);
+	//h_sci_serial_read_regs(&sci_port->port);
+}
+
+static void h_sh_sci_uart_set_termios(struct uart_port *port, struct ktermios *termios, struct ktermios *old)
+{
+	unsigned int baud, smr_val = SCSMR_ASYNC, scr_val = 0, i, bits;
+	unsigned int brr = 255, cks = 0, srr = 15, dl = 0, sccks = 0;
+	unsigned int brr1 = 255, cks1 = 0, srr1 = 15, dl1 = 0;
+	struct sci_port *s = to_sci_port(port);
+	const struct plat_sci_reg *reg;
+	int min_err = INT_MAX, err;
+	unsigned long max_freq = 0;
+	int best_clk = -1;
+	unsigned long flags;
+
+	h_debug;
+
+	h_sci_serial_read_regs(port);
+
+	//# stty -F /dev/ttyHSCI1 speed 9600 cs8 -cstopb
+	//
+		//for (i = 0; i < SCI_NUM_CLKS; i++)
+	max_freq = max(max_freq, clk_get_rate(s->clks[0]));
+
+
+	if (!port->uartclk) {
+		baud = uart_get_baud_rate(port, termios, old, 0, 115200);
+		return;
+		}
+
+	baud = uart_get_baud_rate(port, termios, old, 0, max_freq / 32);
+
+	if (!baud)
+		return;
+
+		//sci_port_enable(s);
+	h_sci_port_enable(s);
+
+	spin_lock_irqsave(&port->lock, flags);
+
+		//sci_reset(port);
+
+	uart_update_timeout(port, termios->c_cflag, baud);
+
+		//sci_init_pins(port, termios->c_cflag);
+	port->status &= ~UPSTAT_AUTOCTS;
+//		s->autorts = false;
+//
+//				if ((port->flags & UPF_HARD_FLOW) &&
+//				    (termios->c_cflag & CRTSCTS)) {
+//					/* There is no CTS interrupt to restart the hardware */
+//					port->status |= UPSTAT_AUTOCTS;
+//					/* MCE is enabled when RTS is raised */
+//					s->autorts = true;
+//				}
+
+		serial_port_out(port, SCSMR, 0x0);
+		serial_port_out(port, SCBRR, 0xff);
+		serial_port_out(port, SCSCR, 0x32);
+		serial_port_out(port, SCFSR, 0x60);
+		serial_port_out(port, SCFTDR, 0x0);
+		serial_port_out(port, SCFRDR, 0x0);
+		serial_port_out(port, SCFCR, 0x0);
+		serial_port_out(port, SCFDR, 0x0);
+		serial_port_out(port, SCSPTR, 0xd5);
+		serial_port_out(port, SCLSR, 0x0);
+		serial_port_out(port, SCDL, 0x60);
+		serial_port_out(port, SCCKS, 0x0);
+
+		//sci_serial_read_regs(port);
+
+	#ifdef CONFIG_SERIAL_SH_SCI_DMA
+
+	#endif
+
+		if ((termios->c_cflag & CREAD) != 0)
+			h_sh_sci_start_rx(port);
+
+		spin_unlock_irqrestore(&port->lock, flags);
+//
+//		sci_port_disable(s);
+//
+//		if (UART_ENABLE_MS(port, termios->c_cflag))
+//			sci_enable_ms(port);
+		h_sci_serial_read_regs(port);
 	return ;
 }
+
+
 
 static void h_sh_sci_uart_pm(struct uart_port *port, unsigned int state,
 		   unsigned int oldstate)
 {
+	struct sci_port *sci_port = to_sci_port(port);
 	h_debug;
+	switch (state) {
+	case UART_PM_STATE_OFF:
+		//sci_port_disable(sci_port);
+		break;
+	default:
+		h_sci_port_enable(sci_port);
+		break;
+	}
 
 }
 
@@ -493,6 +642,11 @@ static int h_sh_sci_probe(struct platform_device *pdev)
 	struct uart_port *port;
 	int i, ret;
 	u8 reg_val;
+	const char *clk_names[] = {
+		[SCI_FCK] = "fck",
+		[SCI_BRG_INT] = "brg_int",
+		[SCI_SCIF_CLK] = "scif_clk",
+	};
 
 
 	h_debug;
@@ -515,9 +669,12 @@ static int h_sh_sci_probe(struct platform_device *pdev)
 
 	sp->idx = uart_idx;
 	sp->dev = dev;
-	sp->clks = devm_clk_get(dev, "scif_clk");
-	printk("clk %s is %pC rate %lu\n", "scif_clk",
-			sp->clks, clk_get_rate(sp->clks));
+	for (i = 0; i < SCI_NUM_CLKS; i++) {
+		sp->clks[i] = devm_clk_get(dev, clk_names[i]);
+		printk("clk %s is %pC rate %lu\n", clk_names[i],
+				sp->clks[i], clk_get_rate(sp->clks[i]));
+	}
+
 
 	port = &sp->port;
 	platform_set_drvdata(pdev, sp);
@@ -528,7 +685,7 @@ static int h_sh_sci_probe(struct platform_device *pdev)
 	port->flags	= UPF_BOOT_AUTOCONF;
 	port->dev	= &pdev->dev;
 	port->fifosize	= 8;
-	port->uartclk	= clk_get_rate(sp->clks);
+	port->uartclk	= clk_get_rate(sp->clks[0]);
 	port->line	= uart_idx;
 
 
