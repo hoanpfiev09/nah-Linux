@@ -262,7 +262,6 @@ static void h_sci_serial_out(struct uart_port* port, int reg , int val)
 
 	regs_size = h_sci_get_size_regs(reg);
 
-	printk("file %s func %s line %d reg %x value %x regs_size %d", __FILE__, __FUNCTION__, __LINE__, reg, val, regs_size);
 	switch (regs_size){
 	case 8:
 		iowrite8(val, port->membase + reg);
@@ -360,14 +359,64 @@ static void h_sh_sci_uart_break_ctl(struct uart_port* port, int ctl)
 	return;
 }
 
+static int h_sh_sci_uart_receive(struct uart_port* port)
+{
+	int ret, count = 0;
+	struct tty_port *tport = &port->state->port;
+	unsigned char flag;
+
+	count = serial_port_in(port, SCFDR) & 0x1F;
+	printk("file %s func %s line %d count %d", __FILE__, __FUNCTION__, __LINE__, count);
+
+	while (count) {
+		char data = serial_port_in(port, SCFRDR);
+		count --;
+		printk("file %s func %s line %d count %d data %c \n", __FILE__, __FUNCTION__, __LINE__, count, data);
+
+		if (uart_handle_sysrq_char(port, data))
+			continue;
+
+		port->icount.rx++;
+		flag = TTY_NORMAL;
+		tty_insert_flip_char(tport, data, flag);
+
+	}
+
+	tty_flip_buffer_push(&port->state->port);
+
+	/* Clear status*/
+	serial_port_out(port, SCFSR, serial_port_in(port, SCFSR) & ~( BIT(1)));
+
+	return ret;
+}
+
 static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
 {
-	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
+	unsigned short ssr_status, scr_status, err_enabled, orer_status, scfdr_status = 0;
 	struct uart_port *port = ptr;
 	struct sci_port *s = to_sci_port(port);
 	irqreturn_t ret = IRQ_HANDLED;
+	unsigned int count = 0;
 
 	h_debug;
+	ssr_status = serial_port_in(port, SCFSR);
+	if(ssr_status & SCIF_RDF)
+		h_sh_sci_uart_receive(port);
+
+
+//
+//	scr_status = serial_port_in(port, SCSCR);
+//	scfdr_status = serial_port_in(port, SCFDR);
+//
+//	char data = serial_port_in(port, SCFRDR);
+//	printk("file %s func %s line %d ssr_status %x scr_status %x scfdr_status %x data %x \n", __FILE__, __FUNCTION__, __LINE__,ssr_status, scr_status, scfdr_status,
+//			data);
+//	serial_port_in(port, SCFRDR);
+//	serial_port_in(port, SCFRDR);
+//	//serial_port_in(port, SCFRDR);
+//	//serial_port_in(port, SCFRDR);
+//	/* Clear status*/
+//	serial_port_out(port, SCFSR, ssr_status & ~( BIT(1)));
 
 	return ret;
 }
@@ -521,7 +570,7 @@ static void h_sh_sci_uart_set_termios(struct uart_port *port, struct ktermios *t
 		serial_port_out(port, SCFTDR, 0x0);
 		serial_port_out(port, SCFRDR, 0x0);
 		serial_port_out(port, SCFCR, 0x0);
-		serial_port_out(port, SCFDR, 0x0);
+		//serial_port_out(port, SCFDR, 0x0);
 		serial_port_out(port, SCSPTR, 0xd5);
 		serial_port_out(port, SCLSR, 0x0);
 		serial_port_out(port, SCDL, 0x60);
