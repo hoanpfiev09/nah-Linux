@@ -37,7 +37,7 @@
 static struct dentry *spi_gpio_debug_dir;
 //static inline void spi_gpio_fault_injector_init(struct platform_device *pdev) {}
 
-#define h_debug printk("file %s func %s line %d", __FILE__, __FUNCTION__, __LINE__)
+#define h_debug printk("file %s func %s line %d \n", __FILE__, __FUNCTION__, __LINE__);
 
 struct sh_msiof_chipdata {
 	u16 tx_fifo_size;
@@ -300,10 +300,9 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 	}
 
 	h_sh_msiof_read_reg_inf(p);
-
 	if(!ret)
+		h_debug;
 
-	//h_debug;
 	return ret;
 }
 
@@ -311,68 +310,65 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 static int h_sh_msiof_prepare_message(struct spi_master *master,
 				    struct spi_message *msg)
 {
-	h_debug;
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	struct spi_device *spi = msg->spi;
-
 	printk("file %s func %s line %d spi->mode %x", __FILE__, __FUNCTION__, __LINE__, spi->mode);
 	u32 val_reg = 0;
 
-	if(!(spi->mode & SPI_CPOL))
-	{
-		//TMDR1
+	/* Master mode on TMDR1 and RMDR1 */
+	h_sh_msiof_write(p, TMDR1, MDR1_TRMD | TMDR1_PCON | MDR1_SYNCMD_SPI | MDR1_XXSTP | (1 << MDR1_FLD_SHIFT));
+	h_sh_msiof_write(p, RMDR1, MDR1_SYNCMD_SPI | MDR1_XXSTP | (1 << MDR1_FLD_SHIFT));
+
+	/* MSIOF CTR This is depend on CPOL and CPHA */
+
+	/* TSCR */
+	h_sh_msiof_write(p, TSCR, 0x1004);
+	/* IER */
+	h_sh_msiof_write(p, IER, STR_TEOF |  STR_REOF);
+
+	/* SPI_CPOL  SPI_CPHA  SPI_LSB_FIRST    =>   MSIOF CTR */
+	val_reg = h_sh_msiof_read(p, CTR);
+	val_reg &= ~ CTR_TSCKIZ_MASK;
+	val_reg &= ~ CTR_RSCKIZ_MASK;
+	if(spi->mode & SPI_CPOL) {
+		val_reg |= (3 << CTR_TSCKIZ_POL_SHIFT);
+		val_reg |= (3 << CTR_RSCKIZ_POL_SHIFT);
+	}
+	else {
+		val_reg |= (3 << CTR_TSCKIZ_POL_SHIFT);
+		val_reg |= (3 << CTR_RSCKIZ_POL_SHIFT);
+	}
+	h_sh_msiof_write(p, CTR, val_reg);
+
+	val_reg = h_sh_msiof_read(p, CTR);
+	val_reg &= ~ (1 << CTR_TEDG_SHIFT);
+	val_reg &= ~ (1 << CTR_REDG_SHIFT);
+	if(spi->mode & SPI_CPHA) {
+		val_reg |= (1 << CTR_TEDG_SHIFT);
+		val_reg |= (1 << CTR_REDG_SHIFT);
+	}
+
+	h_sh_msiof_write(p, CTR, val_reg);
+
+	val_reg = h_sh_msiof_read(p, TMDR1);
+	val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
+	h_sh_msiof_write(p, TMDR1, val_reg);
+
+	val_reg = h_sh_msiof_read(p, RMDR1);
+	val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
+	h_sh_msiof_write(p, RMDR1, val_reg);
+
+	if(spi->mode & SPI_LSB_FIRST) {
 		val_reg = h_sh_msiof_read(p, TMDR1);
-		val_reg |= (1 << 25);
-		//RMDR1
-		val_reg = h_sh_msiof_read(p, RMDR1);
-		val_reg |= (1 << 25);
-		//CTR
-		// TSCKIZ[1:0] = 10
-		val_reg = h_sh_msiof_read(p, CTR);
-		val_reg |=  (1 << 31);
-		val_reg = val_reg & (~(1 << 30));
-		val_reg |=  (1 << 29);
-		val_reg = val_reg & (~(1 << 28));
-		h_sh_msiof_write(p, CTR, val_reg);
-	}
-
-	if(!(spi->mode & SPI_CPHA))
-	{
-		//TMDR1
-		//RMDR1
-		// CTR
-		/*Setting for Outputs transmit data at the ? edge of the clock.*/
-		val_reg = h_sh_msiof_read(p, CTR);
-		val_reg |= (1 << 27);
-		val_reg |= (1 << 26);
-		h_sh_msiof_write(p, CTR, val_reg);
-	}
-
-	if(!(spi->mode & SPI_3WIRE))
-	{
-		//TMDR1
-		//RMDR1
-	}
-
-	if(!(spi->mode & SPI_LSB_FIRST))
-	{
-		//TMDR1
-		val_reg = h_sh_msiof_read(p, TMDR1);
-		val_reg &=  (~(1 << 24));
+		val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
+		val_reg |= (1 << MDR1_BITLSB_SHIFT);
 		h_sh_msiof_write(p, TMDR1, val_reg);
-		//RMDR1
+
 		val_reg = h_sh_msiof_read(p, RMDR1);
-		val_reg &=  (~(1 << 24));
+		val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
+		val_reg |= (1 << MDR1_BITLSB_SHIFT);
 		h_sh_msiof_write(p, RMDR1, val_reg);
-		//CTR
 	}
-
-	h_sh_msiof_write(p, TMDR1, 0xe2000005);
-	h_sh_msiof_write(p, RMDR1, 0x22000000);
-	h_sh_msiof_write(p, CTR, 0xac000000);
-
-	printk("file %s func %s line %d CTR %x RMDR1 %x TMDR1 %x", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR),
-			h_sh_msiof_read(p, RMDR1), h_sh_msiof_read(p, TMDR1));
 
 	h_sh_msiof_read_reg_inf(p);
 	return 0;
@@ -519,7 +515,7 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
-	const void *rx_buf = t->rx_buf;
+    void *rx_buf = t->rx_buf;
 	unsigned int bits = t->bits_per_word;
 	unsigned int sz_tx = sizeof(*tx_buf);
 	u32 tmp_TMDR2 = 0;
@@ -879,7 +875,6 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
 {
 	struct sh_msiof_spi_priv *p = platform_get_drvdata(pdev);
 
-	//sh_msiof_release_dma(p);
 	pm_runtime_disable(&pdev->dev);
 	return 0;
 }
