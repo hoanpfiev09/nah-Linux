@@ -276,7 +276,7 @@ static int h_sh_msiof_spi_setup(struct spi_device *spi)
 {
 	struct device_node	*np = spi->master->dev.of_node;
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(spi->master);
-	int ret;
+	int ret = 0;
 
 	if (!np) {
 		/*
@@ -312,13 +312,13 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 {
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	struct spi_device *spi = msg->spi;
-	printk("file %s func %s line %d spi->mode %x", __FILE__, __FUNCTION__, __LINE__, spi->mode);
+	//printk("file %s func %s line %d spi->mode %x", __FILE__, __FUNCTION__, __LINE__, spi->mode);
 	u32 val_reg = 0;
 
 	/* Master mode on TMDR1 and RMDR1 */
 	h_sh_msiof_write(p, TMDR1, MDR1_TRMD | TMDR1_PCON | MDR1_SYNCMD_SPI | MDR1_XXSTP | (1 << MDR1_FLD_SHIFT));
 	h_sh_msiof_write(p, RMDR1, MDR1_SYNCMD_SPI | MDR1_XXSTP | (1 << MDR1_FLD_SHIFT));
-
+	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
 	/* MSIOF CTR This is depend on CPOL and CPHA */
 
 	/* TSCR */
@@ -335,21 +335,21 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 		val_reg |= (3 << CTR_RSCKIZ_POL_SHIFT);
 	}
 	else {
-		val_reg |= (3 << CTR_TSCKIZ_POL_SHIFT);
-		val_reg |= (3 << CTR_RSCKIZ_POL_SHIFT);
+		val_reg |= (2 << CTR_TSCKIZ_POL_SHIFT);
+		val_reg |= (2 << CTR_RSCKIZ_POL_SHIFT);
 	}
 	h_sh_msiof_write(p, CTR, val_reg);
-
+	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
 	val_reg = h_sh_msiof_read(p, CTR);
 	val_reg &= ~ (1 << CTR_TEDG_SHIFT);
 	val_reg &= ~ (1 << CTR_REDG_SHIFT);
-	if(spi->mode & SPI_CPHA) {
+	if(!(spi->mode & SPI_CPHA)) {
 		val_reg |= (1 << CTR_TEDG_SHIFT);
 		val_reg |= (1 << CTR_REDG_SHIFT);
 	}
 
 	h_sh_msiof_write(p, CTR, val_reg);
-
+	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
 	val_reg = h_sh_msiof_read(p, TMDR1);
 	val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
 	h_sh_msiof_write(p, TMDR1, val_reg);
@@ -358,7 +358,7 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 	val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
 	h_sh_msiof_write(p, RMDR1, val_reg);
 
-	if(spi->mode & SPI_LSB_FIRST) {
+	if (spi->mode & SPI_LSB_FIRST) {
 		val_reg = h_sh_msiof_read(p, TMDR1);
 		val_reg &= ~ (1 << MDR1_BITLSB_SHIFT);
 		val_reg |= (1 << MDR1_BITLSB_SHIFT);
@@ -370,7 +370,8 @@ static int h_sh_msiof_prepare_message(struct spi_master *master,
 		h_sh_msiof_write(p, RMDR1, val_reg);
 	}
 
-	h_sh_msiof_read_reg_inf(p);
+	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
+	//h_sh_msiof_read_reg_inf(p);
 	return 0;
 }
 
@@ -460,6 +461,7 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *tx_data, u
 		h_sh_msiof_write(p, TFDR , d_wrfifo);
 	}
 
+	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
 	if(rx_data)
 		h_sh_msiof_write(p, CTR , 0xac00c300);
 	else
@@ -497,21 +499,8 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 				 struct spi_transfer *t)
 {
 
-	unsigned int i = 0;
-	n_transfer_one ++;
-//	if(n_transfer_one >= 7)
-//	{
-//		unsigned int t_len = 257;
-//		u8* data_t = (u8 *)kmalloc(t_len * sizeof(u8*), GFP_KERNEL);
-//		for (i = 0; i < t_len; i++)
-//		{
-//			data_t[i] = 0x00 + i;
-//		};
-//
-//		t->len = t_len;
-//		t->tx_buf = data_t;
-//	}
-
+	unsigned int i = 0, n_words = 0;
+	unsigned int nbytes;
 	struct rcar_sh_msiof_priv *p = spi_master_get_devdata(master);
 	unsigned int len = t->len;
 	const void *tx_buf = t->tx_buf;
@@ -521,25 +510,21 @@ static int h_sh_msiof_transfer_one(struct spi_master *master,
 	u32 tmp_TMDR2 = 0;
 	u32 tmp_RMDR2 = 0;
 
+	printk("file %s func %s line %d t->len %d *tx_buf %x *rx_buf %x \n",
+			__FILE__, __FUNCTION__, __LINE__, t->len, tx_buf, rx_buf);
+
 	u8 *tx_data = t->tx_buf;
 	u8 *rx_data = t->rx_buf;
 
-	// Configure Clock
+	/* Configure Clock */
 	h_sh_msiof_write(p, TSCR, 0x1004);
 
-	unsigned int n_words = 0;
-	//n_words = len / 4 + ((len % 4)? 1 : 0);
 	n_words = len;
-
-	printk("file %s func %s line %d n_words %d t->len %d *tx_buf %x *rx_buf %x", __FILE__, __FUNCTION__, __LINE__, n_words, t->len, tx_buf, rx_buf);
-
-	unsigned int nbytes = 1;
+	nbytes = 1;
 	tmp_TMDR2 |= ((nbytes * 8 - 1) << 24) ;
 	h_sh_msiof_write(p, TMDR2, tmp_TMDR2);
-
 	tmp_RMDR2 |= ((nbytes * 8 - 1) << 24);
 	h_sh_msiof_write(p, RMDR2, tmp_RMDR2);
-
 	for (i = 0; i < n_words / 64; i++)
 	{
 		h_sh_msiof_transfer_once(p, tx_data, rx_data, 64);
@@ -754,7 +739,8 @@ static int h_sh_msiof_spi_probe(struct platform_device *pdev)
 
 	/* init master code */
 	master->dev.of_node	= pdev->dev.of_node;
-	master->mode_bits	= SPI_MODE_3 | SPI_MODE_0 | SPI_CS_HIGH;
+	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
+	master->mode_bits |= SPI_LSB_FIRST | SPI_3WIRE;
 	//	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
 
 	/*
