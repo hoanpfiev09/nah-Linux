@@ -439,6 +439,7 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *tx_data, u
 	u32 tmp_RMDR2 = 0;
 	u32 d_wrfifo = 0;
 	u32 tmp_STR;
+	u32 tmp_CTR;
 	unsigned int i;
 
 	printk("file %s func %s line %d bytes %d", __FILE__, __FUNCTION__, __LINE__, bytes);
@@ -455,19 +456,39 @@ static int h_sh_msiof_transfer_once(struct rcar_sh_msiof_priv *p, u8 *tx_data, u
 
 	h_sh_msiof_write(p, IER, IER_TEOFE | IER_REOFE);
 
-	for (i = 0; i < bytes; i++)
-	{
+	for (i = 0; i < bytes; i++) {
 		d_wrfifo = tx_data[i] << 24;
 		h_sh_msiof_write(p, TFDR , d_wrfifo);
 	}
+	// Set TSCKE
+	tmp_CTR = h_sh_msiof_read(p, CTR);
+	tmp_CTR |= CTR_TSCKE;
+	h_sh_msiof_write(p, CTR , tmp_CTR);;
+	// Set TFSE
+	tmp_CTR = h_sh_msiof_read(p, CTR);
+	tmp_CTR |= CTR_TFSE;
+	h_sh_msiof_write(p, CTR , tmp_CTR);
 
-	printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
-	if(rx_data)
-		h_sh_msiof_write(p, CTR , 0xac00c300);
-	else
-		h_sh_msiof_write(p, CTR , 0xac00c200);
+	tmp_CTR = h_sh_msiof_read(p, CTR);
+	tmp_CTR |= CTR_TXE;
+	h_sh_msiof_write(p, CTR , tmp_CTR);
+	if(rx_data) {
+		// Set RXE
+		tmp_CTR = h_sh_msiof_read(p, CTR);
+		tmp_CTR |= CTR_TXE;
+		h_sh_msiof_write(p, CTR , tmp_CTR);
+		tmp_CTR = h_sh_msiof_read(p, CTR);
+		tmp_CTR |= CTR_RXE;
+		h_sh_msiof_write(p, CTR , tmp_CTR);
+		for(;;) {
+			if ((h_sh_msiof_read(p, CTR) & (CTR_RXE)) &&  (h_sh_msiof_read(p, CTR) & (CTR_TXE)))
+			break;
+		}
+	}
 
-	udelay(1000);
+
+	//printk("file %s func %s line %d CTR %x \n", __FILE__, __FUNCTION__, __LINE__, h_sh_msiof_read(p, CTR));
+
 	tmp_STR = h_sh_msiof_read(p, STR);
 	/* wait for complete */
 	for (i = 100; i > 0; i--) {
